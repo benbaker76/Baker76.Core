@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Baker76 Imaging is a library for creating and manipulating images with basic support for reading and writing image file formats.</Description>
+        <PackageTags>Baker76;Imaging</PackageTags>
+    </PropertyGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\Hjg.Pngcs\Hjg.Pngcs.csproj" />
+    </ItemGroup>
+</Project>

@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Baker76 Core a library with common classes and extensions.</Description>
+        <PackageTags>Baker76;Core</PackageTags>
+        <TargetFrameworks>net8.0</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Abstractions.Sass.CIBuild" Version="1.1.52" />
+    </ItemGroup>
+
+</Project>

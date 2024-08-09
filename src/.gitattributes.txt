@@ -1,0 +1,2 @@
+Baker76.Compression.Tests/TestData/Lha/test.txt eol=lf
+Baker76.Compression.Tests/TestData/Lha/test.txt.lh0.bin eol=lf
