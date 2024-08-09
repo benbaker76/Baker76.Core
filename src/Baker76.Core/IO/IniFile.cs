@@ -30,7 +30,7 @@ namespace Baker76.Core.IO
 
         private void LoadFromFile(string fileName)
         {
-            using (var stream = new FileStream(fileName, FileMode.Open, FileAccess.Read))
+            using (var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.Read))
             {
                 LoadFromStream(stream);
             }
@@ -114,10 +114,20 @@ namespace Baker76.Core.IO
             _data.Remove(section);
         }
 
+        public void SetValue(string section, string key, string value)
+        {
+            SetValue<string>(section, key, value);
+        }
+
         public void SetValue<T>(string section, string key, T value)
         {
             AddSection(section);
             _data[section][key] = value?.ToString() ?? string.Empty;
+        }
+
+        public string GetValue(string section, string key, string defaultValue = "")
+        {
+            return GetValue<string>(section, key, defaultValue);
         }
 
         public T GetValue<T>(string section, string key, T defaultValue = default)
@@ -143,12 +153,20 @@ namespace Baker76.Core.IO
             return defaultValue;
         }
 
-        public void RemoveKey(string section, string key)
+        public bool ContainsKey(string section, string key)
         {
             if (!_data.ContainsKey(section))
-                return;
+                return false;
 
             if (!_data[section].ContainsKey(key))
+                return false;
+
+            return true;
+        }
+
+        public void RemoveKey(string section, string key)
+        {
+            if (!ContainsKey(section, key))
                 return;
 
             _data[section].Remove(key);

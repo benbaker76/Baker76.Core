@@ -55,6 +55,14 @@ namespace Baker76.Imaging
             }
         }
 
+        public static async Task<Color[]> Read(string fileName)
+        {
+            using (var stream = new FileStream(fileName, FileMode.Open, FileAccess.Read))
+            {
+                return await Read(stream);
+            }
+        }
+
         public static async Task<Color[]> Read(Stream stream)
         {
             Color[] palette = null;
