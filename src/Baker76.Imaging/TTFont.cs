@@ -13,11 +13,18 @@ namespace Baker76.Imaging
         public readonly int Height;
         public readonly byte[] Pixels; // Stores RGBA data
 
-        public GlyphBitmap(int width, int height)
+        public GlyphBitmap(int width, int height, Color backgroundColor)
         {
             Width = width;
             Height = height;
             Pixels = new byte[width * height * 4]; // 4 bytes per pixel (RGBA)
+            for (int i = 0; i < Pixels.Length; i += 4)
+            {
+                Pixels[i] = (byte)backgroundColor.R;
+                Pixels[i + 1] = (byte)backgroundColor.G;
+                Pixels[i + 2] = (byte)backgroundColor.B;
+                Pixels[i + 3] = (byte)backgroundColor.A;
+            }
         }
 
         public GlyphBitmap(int width, int height, byte[] pixels)
@@ -28,7 +35,7 @@ namespace Baker76.Imaging
         }
 
         // Draw another GlyphBitmap onto this one
-        public void Draw(GlyphBitmap other, int x, int y)
+        public void Draw(GlyphBitmap other, int x, int y, Color backgroundColor)
         {
             for (int j = 0; j < other.Height; j++)
             {
@@ -37,11 +44,33 @@ namespace Baker76.Imaging
                     int srcOfs = (i + j * other.Width) * 4;
                     int destOfs = ((x + i) + (y + j) * this.Width) * 4;
 
-                    // Or RGBA values
-                    Pixels[destOfs] |= other.Pixels[srcOfs];         // Red
-                    Pixels[destOfs + 1] |= other.Pixels[srcOfs + 1]; // Green
-                    Pixels[destOfs + 2] |= other.Pixels[srcOfs + 2]; // Blue
-                    Pixels[destOfs + 3] |= other.Pixels[srcOfs + 3]; // Alpha
+                    // Extract source and destination colors
+                    byte srcAlpha = other.Pixels[srcOfs + 3];
+                    byte srcRed = other.Pixels[srcOfs];
+                    byte srcGreen = other.Pixels[srcOfs + 1];
+                    byte srcBlue = other.Pixels[srcOfs + 2];
+
+                    byte destAlpha = Pixels[destOfs + 3];
+                    byte destRed = Pixels[destOfs];
+                    byte destGreen = Pixels[destOfs + 1];
+                    byte destBlue = Pixels[destOfs + 2];
+
+                    // Blend the source and destination colors based on their alpha values
+                    if (destAlpha == 0)
+                    {
+                        Pixels[destOfs] = srcRed;
+                        Pixels[destOfs + 1] = srcGreen;
+                        Pixels[destOfs + 2] = srcBlue;
+                        Pixels[destOfs + 3] = srcAlpha;
+                    }
+                    else if (srcAlpha > 0)
+                    {
+                        int outAlpha = srcAlpha + ((255 - srcAlpha) * destAlpha / 255);
+                        Pixels[destOfs] = (byte)((srcRed * srcAlpha + destRed * destAlpha * (255 - srcAlpha) / 255) / outAlpha);
+                        Pixels[destOfs + 1] = (byte)((srcGreen * srcAlpha + destGreen * destAlpha * (255 - srcAlpha) / 255) / outAlpha);
+                        Pixels[destOfs + 2] = (byte)((srcBlue * srcAlpha + destBlue * destAlpha * (255 - srcAlpha) / 255) / outAlpha);
+                        Pixels[destOfs + 3] = (byte)outAlpha;
+                    }
                 }
             }
         }
@@ -124,6 +153,8 @@ namespace Baker76.Imaging
         private int _indexToLocFormat;         // format needed to map from glyph index to glyph
         private uint _unitsPerEm;
 
+        private object _userData;
+
         private Dictionary<int, string> _svgDocuments = new Dictionary<int, string>();
 
         private const byte PLATFORM_ID_UNICODE = 0;
@@ -145,13 +176,14 @@ namespace Baker76.Imaging
         private const byte VCURVE = 3;
         private const byte VCUBIC = 4;
 
-        public delegate Task<GlyphBitmap> SvgRenderCallback(TTFont font, string svgDoc, int glyph);
+        public delegate Task<GlyphBitmap> SvgRenderCallback(TTFont font, string svgDoc, int glyph, object userData);
 
         public SvgRenderCallback SvgRender;
 
-        public TTFont(byte[] bytes)
+        public TTFont(byte[] bytes, object userData)
         {
             _data = bytes;
+            _userData = userData;
             _svgDocuments = new Dictionary<int, string>();
 
             if (!IsFont())
@@ -684,12 +716,12 @@ namespace Baker76.Imaging
             return pixelHeight / fHeight;
         }
 
-        public async Task<(GlyphBitmap, int, int)> GetCodePointBitmap(float scaleX, float scaleY, char codePoint)
+        public async Task<(GlyphBitmap, int, int)> GetCodePointBitmap(float scaleX, float scaleY, char codePoint, Color color, Color backgroundColor)
         {
-            return await GetGlyphBitmap(scaleX, scaleY, 0, 0, FindGlyphIndex(codePoint));
+            return await GetGlyphBitmap(scaleX, scaleY, 0, 0, FindGlyphIndex(codePoint), color, backgroundColor);
         }
 
-        private async Task<(GlyphBitmap, int, int)> GetGlyphBitmap(float scaleX, float scaleY, float shiftX, float shiftY, int glyph)
+        private async Task<(GlyphBitmap, int, int)> GetGlyphBitmap(float scaleX, float scaleY, float shiftX, float shiftY, int glyph, Color color, Color backgroundColor)
         {
             // Check if the glyph is an SVG
             if (_svg != 0)
@@ -698,12 +730,12 @@ namespace Baker76.Imaging
 
                 if (SvgRender != null && _svgDocuments.TryGetValue(glyph, out svgDoc))
                 {
-                    var ret = await SvgRender(this, svgDoc, glyph);
+                    var ret = await SvgRender(this, svgDoc, glyph, _userData);
 
                     return (ret, 0, 0);
                 }
 
-                return (new GlyphBitmap(4, 4), 0, 0);
+                return (new GlyphBitmap(4, 4, backgroundColor), 0, 0);
             }
 
             // Regular glyph processing
@@ -731,8 +763,8 @@ namespace Baker76.Imaging
                 throw new Exception("invalid glyph size");
 
             // now we get the size
-            var result = new GlyphBitmap(w, h);
-            Rasterize(result, 0.35f, vertices, scaleX, scaleY, shiftX, shiftY, ix0, iy0, true);
+            var result = new GlyphBitmap(w, h, backgroundColor);
+            Rasterize(result, 0.35f, vertices, scaleX, scaleY, shiftX, shiftY, ix0, iy0, true, color);
 
             return (result, ix0, iy0);
         }
@@ -1428,7 +1460,7 @@ namespace Baker76.Imaging
 
         // note: this routine clips fills that extend off the edges... 
         // ideally this wouldn't happen, but it could happen if the truetype glyph bounding boxes are wrong, or if the user supplies a too-small bitmap
-        private void FillActiveEdges(byte[] scanline, int len, ActiveEdge e, int maxWeight)
+        private void FillActiveEdges(byte[] scanline, int len, ActiveEdge e, int maxWeight, Color color)
         {
             // non-zero winding fill
             int x0 = 0;
@@ -1460,22 +1492,22 @@ namespace Baker76.Imaging
                             {
                                 // x0,x1 are the same pixel, so compute combined coverage
                                 int coverage = (int)(((x1 - x0) * maxWeight) >> FIXSHIFT);
-                                AddCoverage(scanline, i, coverage);
+                                AddCoverage(scanline, i, coverage, color);
                             }
                             else
                             {
                                 if (i >= 0) // add antialiasing for x0
-                                    AddCoverage(scanline, i, (int)(((FIX - (x0 & FIXMASK)) * maxWeight) >> FIXSHIFT));
+                                    AddCoverage(scanline, i, (int)(((FIX - (x0 & FIXMASK)) * maxWeight) >> FIXSHIFT), color);
                                 else
                                     i = -1; // clip
 
                                 if (j < len) // add antialiasing for x1
-                                    AddCoverage(scanline, j, (int)(((x1 & FIXMASK) * maxWeight) >> FIXSHIFT));
+                                    AddCoverage(scanline, j, (int)(((x1 & FIXMASK) * maxWeight) >> FIXSHIFT), color);
                                 else
                                     j = len; // clip
 
                                 for (++i; i < j; ++i) // fill pixels between x0 and x1
-                                    AddCoverage(scanline, i, maxWeight);
+                                    AddCoverage(scanline, i, maxWeight, color);
                             }
                         }
                     }
@@ -1484,7 +1516,7 @@ namespace Baker76.Imaging
             }
         }
 
-        private void AddCoverage(byte[] scanline, int index, int coverage)
+        private void AddCoverage(byte[] scanline, int index, int coverage, Color color)
         {
             if (index >= 0 && index < scanline.Length / 4)
             {
@@ -1495,14 +1527,14 @@ namespace Baker76.Imaging
                 byte newAlpha = (byte)Math.Min(255, existingAlpha + coverage);
 
                 // Set the RGB channels to white (255) when adding coverage
-                scanline[offset] = 255;     // Red
-                scanline[offset + 1] = 255; // Green
-                scanline[offset + 2] = 255; // Blue
+                scanline[offset] = (byte)color.R;     // Red
+                scanline[offset + 1] = (byte)color.G; // Green
+                scanline[offset + 2] = (byte)color.B; // Blue
                 scanline[offset + 3] = newAlpha; // Alpha
             }
         }
 
-        private void RasterizeSortedEdges(GlyphBitmap bitmap, List<Edge> e, int vSubSamples, int offX, int offY)
+        private void RasterizeSortedEdges(GlyphBitmap bitmap, List<Edge> e, int vSubSamples, int offX, int offY, Color color)
         {
             int eIndex = 0;
 
@@ -1624,7 +1656,7 @@ namespace Baker76.Imaging
 
                     // now process all active edges in XOR fashion
                     if (active != null)
-                        FillActiveEdges(scanline, bitmap.Width, active, maxWeight);
+                        FillActiveEdges(scanline, bitmap.Width, active, maxWeight, color);
 
                     y++;
                 }
@@ -1647,7 +1679,7 @@ namespace Baker76.Imaging
             }
         }
 
-        private void Rasterize(GlyphBitmap bitmap, float flatnessInPixels, List<Vertex> vertices, float scaleX, float scaleY, float shiftX, float shiftY, int xOff, int yOff, bool invert)
+        private void Rasterize(GlyphBitmap bitmap, float flatnessInPixels, List<Vertex> vertices, float scaleX, float scaleY, float shiftX, float shiftY, int xOff, int yOff, bool invert, Color color)
         {
             float scale = scaleX < scaleY ? scaleX : scaleY;
 
@@ -1655,10 +1687,10 @@ namespace Baker76.Imaging
             List<PointF> windings;
             int windingCount = FlattenCurves(vertices, flatnessInPixels / scale, out windingLengths, out windings);
             if (windingCount > 0)
-                Rasterize(bitmap, windings, windingLengths, windingCount, scaleX, scaleY, shiftX, shiftY, xOff, yOff, invert);
+                Rasterize(bitmap, windings, windingLengths, windingCount, scaleX, scaleY, shiftX, shiftY, xOff, yOff, invert, color);
         }
 
-        private void Rasterize(GlyphBitmap bitmap, List<PointF> points, int[] windings, int windingCount, float scaleX, float scaleY, float shiftX, float shiftY, int xOff, int yOff, bool invert)
+        private void Rasterize(GlyphBitmap bitmap, List<PointF> points, int[] windings, int windingCount, float scaleX, float scaleY, float shiftX, float shiftY, int xOff, int yOff, bool invert, Color color)
         {
             int ptOfs = 0;
 
@@ -1717,7 +1749,7 @@ namespace Baker76.Imaging
             edgeList.Add(temp);
 
             // now, traverse the scanlines and find the intersections on each scanline, use xor winding rule
-            RasterizeSortedEdges(bitmap, edgeList, vSubSamples, xOff, yOff);
+            RasterizeSortedEdges(bitmap, edgeList, vSubSamples, xOff, yOff, color);
         }
 
         public int GetKerning(char current, char next, float scale)
@@ -1731,7 +1763,7 @@ namespace Baker76.Imaging
             return (p > 0);
         }
 
-        public async Task<FontGlyph> RenderGlyph(char id, float scale)
+        public async Task<FontGlyph> RenderGlyph(char id, float scale, Color color, Color backgroundColor)
         {
             if (!HasGlyph(id))
                 return null;
@@ -1743,8 +1775,8 @@ namespace Baker76.Imaging
             if (id == ' ')
             {
                 id = '_';
-                (_, xOfs, yOfs) = await GetCodePointBitmap(scale, scale, id);
-                glyphTarget.Image = new GlyphBitmap(4, 4);
+                (_, xOfs, yOfs) = await GetCodePointBitmap(scale, scale, id, color, backgroundColor);
+                glyphTarget.Image = new GlyphBitmap(4, 4, backgroundColor);
             }
             else
             {
@@ -1754,7 +1786,7 @@ namespace Baker76.Imaging
                         id = (char.IsUpper(id) ? char.ToLowerInvariant(id) : char.ToUpperInvariant(id));
                 }
 
-                (glyphTarget.Image, xOfs, yOfs) = await GetCodePointBitmap(scale, scale, id);
+                (glyphTarget.Image, xOfs, yOfs) = await GetCodePointBitmap(scale, scale, id, color, backgroundColor);
             }
 
             glyphTarget.xOfs = xOfs;

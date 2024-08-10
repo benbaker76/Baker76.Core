@@ -14,10 +14,10 @@ namespace Baker76.Imaging
         spread: The spread in pixels before the distance field clamps to (zero/one). 
         The value is specified in units of the destination image. The spread in the source image will be spread*scale_down.
         */
-        public static GlyphBitmap CreateDistanceField(GlyphBitmap source, int scale, float spread)
+        public static GlyphBitmap CreateDistanceField(GlyphBitmap source, int scale, float spread, Color backgroundColor)
         {
             // Assuming GlyphBitmap now handles RGBA pixels, where each pixel has 4 bytes
-            var result = new GlyphBitmap(source.Width / scale, source.Height / scale);
+            var result = new GlyphBitmap(source.Width / scale, source.Height / scale, backgroundColor);
 
             // Process each channel separately (R, G, B, A)
             float[] valuesR = new float[source.Width * source.Height];
