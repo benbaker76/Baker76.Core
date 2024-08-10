@@ -58,6 +58,11 @@ namespace Baker76.Imaging
             return new Color(r, g, b, a);
         }
 
+        public static Color FromRgba(int r, int g, int b)
+        {
+            return new Color(r, g, b, 255);
+        }
+
         public static Color FromRgbaNonPremultiplied(int r, int g, int b, int a)
         {
             return new Color(
