@@ -8,16 +8,16 @@ namespace Baker76.Imaging
 {
     public class ImageOptions
     {
-        public bool InsertMagenta = true;
-        public bool RemapColors = true;
-        public Palette Palette = null;
-        public int PaletteSlot = 0;
-        public int ColorCount = 256;
-        public DistanceType DistanceType = DistanceType.CIEDE2000;
-        public int FrameWidth = 0;
-        public int FrameHeight = 0;
-        public int FrameCount = 0;
-        public int FrameDuration = 100;
+        public virtual bool InsertMagenta { get; set; } = true;
+        public virtual bool RemapColors { get; set; } = true;
+        public virtual Palette Palette { get; set; } = null;
+        public virtual int PaletteSlot { get; set; } = 0;
+        public virtual int ColorCount { get; set; } = 256;
+        public virtual DistanceType DistanceType { get; set; } = DistanceType.CIEDE2000;
+        public virtual int FrameWidth { get; set; } = 0;
+        public virtual int FrameHeight { get; set; } = 0;
+        public virtual int FrameCount { get; set; } = 0;
+        public virtual int FrameDuration { get; set; } = 100;
     }
 
     public class Utility
