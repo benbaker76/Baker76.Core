@@ -125,7 +125,7 @@ namespace Baker76.Core.IO
             _data[section][key] = value?.ToString() ?? string.Empty;
         }
 
-        public string GetValue(string section, string key, string defaultValue = "")
+        public string GetValue(string section, string key, string defaultValue = null)
         {
             return GetValue<string>(section, key, defaultValue);
         }
