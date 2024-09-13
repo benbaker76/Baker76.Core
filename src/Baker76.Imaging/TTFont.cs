@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,12 +12,14 @@ namespace Baker76.Imaging
     {
         public readonly int Width;
         public readonly int Height;
+        public readonly bool IsSvg;
         public readonly byte[] Pixels; // Stores RGBA data
 
-        public GlyphBitmap(int width, int height, Color backgroundColor)
+        public GlyphBitmap(int width, int height, bool isSvg, Color backgroundColor)
         {
             Width = width;
             Height = height;
+            IsSvg = isSvg;
             Pixels = new byte[width * height * 4]; // 4 bytes per pixel (RGBA)
             for (int i = 0; i < Pixels.Length; i += 4)
             {
@@ -27,11 +30,39 @@ namespace Baker76.Imaging
             }
         }
 
-        public GlyphBitmap(int width, int height, byte[] pixels)
+        public GlyphBitmap(int width, int height, bool isSvg)
+        {
+            Width = width;
+            Height = height;
+            Pixels = new byte[width * height * 4];
+            IsSvg = isSvg;
+        }
+
+
+        public GlyphBitmap(int width, int height, byte[] pixels, bool isSvg)
         {
             Width = width;
             Height = height;
             Pixels = pixels;
+            IsSvg = isSvg;
+        }
+
+        public void DrawRectangle(int x, int y, int width, int height, Color color)
+        {
+            for (int j = y; j < y + height; j++)
+            {
+                for (int i = x; i < x + width; i++)
+                {
+                    if (i < 0 || j < 0 || i >= Width || j >= Height)
+                        continue;
+
+                    int ofs = (i + j * Width) * 4;
+                    Pixels[ofs] = (byte)color.R;
+                    Pixels[ofs + 1] = (byte)color.G;
+                    Pixels[ofs + 2] = (byte)color.B;
+                    Pixels[ofs + 3] = (byte)color.A;
+                }
+            }
         }
 
         // Draw another GlyphBitmap onto this one
@@ -41,47 +72,53 @@ namespace Baker76.Imaging
             {
                 for (int i = 0; i < other.Width; i++)
                 {
+                    int destX = x + i;
+                    int destY = y + j;
+
+                    if (destX < 0 || destY < 0 || destX >= Width || destY >= Height || i >= other.Width || j >= other.Height)
+                        continue;
+
                     int srcOfs = (i + j * other.Width) * 4;
-                    int destOfs = ((x + i) + (y + j) * this.Width) * 4;
+                    int destOfs = (destX + destY * this.Width) * 4;
 
                     // Extract source and destination colors
-                    byte srcAlpha = other.Pixels[srcOfs + 3];
                     byte srcRed = other.Pixels[srcOfs];
                     byte srcGreen = other.Pixels[srcOfs + 1];
                     byte srcBlue = other.Pixels[srcOfs + 2];
+                    byte srcAlpha = other.Pixels[srcOfs + 3];
 
-                    byte destAlpha = Pixels[destOfs + 3];
                     byte destRed = Pixels[destOfs];
                     byte destGreen = Pixels[destOfs + 1];
                     byte destBlue = Pixels[destOfs + 2];
+                    byte destAlpha = Pixels[destOfs + 3];
+
+                    // Normalize the alpha values (0-255 to 0-1)
+                    float srcAlphaNorm = srcAlpha / 255f;
+                    float destAlphaNorm = destAlpha / 255f;
 
                     // Blend the source and destination colors based on their alpha values
-                    if (destAlpha == 0)
+                    float outAlphaNorm = srcAlphaNorm + destAlphaNorm * (1 - srcAlphaNorm);
+                    if (outAlphaNorm > 0)
                     {
-                        Pixels[destOfs] = srcRed;
-                        Pixels[destOfs + 1] = srcGreen;
-                        Pixels[destOfs + 2] = srcBlue;
-                        Pixels[destOfs + 3] = srcAlpha;
+                        Pixels[destOfs] = (byte)((srcRed * srcAlphaNorm + destRed * destAlphaNorm * (1 - srcAlphaNorm)) / outAlphaNorm);
+                        Pixels[destOfs + 1] = (byte)((srcGreen * srcAlphaNorm + destGreen * destAlphaNorm * (1 - srcAlphaNorm)) / outAlphaNorm);
+                        Pixels[destOfs + 2] = (byte)((srcBlue * srcAlphaNorm + destBlue * destAlphaNorm * (1 - srcAlphaNorm)) / outAlphaNorm);
                     }
-                    else if (srcAlpha > 0)
-                    {
-                        int outAlpha = srcAlpha + ((255 - srcAlpha) * destAlpha / 255);
-                        Pixels[destOfs] = (byte)((srcRed * srcAlpha + destRed * destAlpha * (255 - srcAlpha) / 255) / outAlpha);
-                        Pixels[destOfs + 1] = (byte)((srcGreen * srcAlpha + destGreen * destAlpha * (255 - srcAlpha) / 255) / outAlpha);
-                        Pixels[destOfs + 2] = (byte)((srcBlue * srcAlpha + destBlue * destAlpha * (255 - srcAlpha) / 255) / outAlpha);
-                        Pixels[destOfs + 3] = (byte)outAlpha;
-                    }
+
+                    // Update the destination alpha value
+                    Pixels[destOfs + 3] = (byte)(outAlphaNorm * 255);
                 }
             }
         }
     }
 
-    public class FontGlyph
+    public class GlyphMetrics
     {
-        public GlyphBitmap Image { get; internal set; }
-        public int xOfs { get; internal set; }
-        public int yOfs { get; internal set; }
-        public int xAdvance { get; internal set; }
+        public RectangleF Bounds { get; set; }
+        public int LeftSideBearing { get; internal set; }
+        public int TopSideBearing { get; internal set; }
+        public int AdvanceWidth { get; internal set; }
+        public int AdvanceHeight { get; internal set; }
     }
 
     internal struct Edge
@@ -144,14 +181,20 @@ namespace Baker76.Imaging
         private uint _head;
         private uint _glyf;
         private uint _hhea;
+        private uint _vhea;
         private uint _hmtx;
+        private uint _vmtx;
         private uint _kern; // table locations as offset from start of .ttf
+        private uint _name;
         private uint _gpos;
         private uint _svg;
 
         private uint _indexMap;                // a cmap mapping for our chosen character encoding
         private int _indexToLocFormat;         // format needed to map from glyph index to glyph
         private uint _unitsPerEm;
+
+        private string _fontName;
+        private string _fontStyle;
 
         private object _userData;
 
@@ -176,7 +219,7 @@ namespace Baker76.Imaging
         private const byte VCURVE = 3;
         private const byte VCUBIC = 4;
 
-        public delegate Task<GlyphBitmap> SvgRenderCallback(TTFont font, string svgDoc, int glyph, object userData);
+        public delegate Task<GlyphBitmap> SvgRenderCallback(TTFont font, string svgDoc, char codePoint, int glyph, object userData);
 
         public SvgRenderCallback SvgRender;
 
@@ -196,8 +239,11 @@ namespace Baker76.Imaging
             _head = FindTable("head");
             _glyf = FindTable("glyf");
             _hhea = FindTable("hhea");
+            _vhea = FindTable("vhea");
             _hmtx = FindTable("hmtx");
+            _vmtx = FindTable("vmtx");
             _kern = FindTable("kern");
+            _name = FindTable("name");
             _gpos = FindTable("GPOS");
             _svg = FindTable("SVG ");
 
@@ -206,6 +252,7 @@ namespace Baker76.Imaging
                 throw new System.Exception("'Invalid font file");
             } */
 
+            ParseNameTable();
             ParseSvgTable();
 
             var t = FindTable("maxp");
@@ -331,6 +378,33 @@ namespace Baker76.Imaging
             }
         }
 
+        private void ParseNameTable()
+        {
+            if (_name == 0)
+                return;
+
+            uint count = ReadU16(_name + 2);
+            uint stringOffset = _name + ReadU16(_name + 4);
+            // Get font name and style
+            for (uint i = 0; i < count; i++)
+            {
+                uint loc = _name + 6 + 12 * i;
+                uint platformID = ReadU16(loc + 0);
+                uint encodingID = ReadU16(loc + 2);
+                uint languageID = ReadU16(loc + 4);
+                uint nameID = ReadU16(loc + 6);
+                uint length = ReadU16(loc + 8);
+                uint offset = ReadU16(loc + 10);
+
+                // Full font name
+                if (nameID == 1)
+                    _fontName = Encoding.BigEndianUnicode.GetString(_data, (int)(stringOffset + offset), (int)length);
+                // Font style
+                if (nameID == 2)
+                    _fontStyle = Encoding.BigEndianUnicode.GetString(_data, (int)(stringOffset + offset), (int)length);
+            }
+        }
+
         private void ParseSvgTable()
         {
             if (_svg == 0)
@@ -412,6 +486,12 @@ namespace Baker76.Imaging
 
         public void GetGlyphHMetrics(int glyphIndex, out int advanceWidth, out int leftSideBearing)
         {
+            advanceWidth = 0;
+            leftSideBearing = 0;
+
+            if (_hhea == 0)
+                return;
+
             uint numOfLongHorMetrics = ReadU16(_hhea + 34);
             if (glyphIndex < numOfLongHorMetrics)
             {
@@ -422,6 +502,27 @@ namespace Baker76.Imaging
             {
                 advanceWidth = ReadS16(_hmtx + 4 * (numOfLongHorMetrics - 1));
                 leftSideBearing = ReadS16((uint)(_hmtx + 4 * numOfLongHorMetrics + 2 * (glyphIndex - numOfLongHorMetrics)));
+            }
+        }
+
+        public void GetGlyphVMetrics(int glyphIndex, out int advanceHeight, out int topSideBearing)
+        {
+            advanceHeight = 0;
+            topSideBearing = 0;
+
+            if (_vhea == 0)
+                return;
+
+            uint numOfLongVerMetrics = ReadU16(_vhea + 34);
+            if (glyphIndex < numOfLongVerMetrics)
+            {
+                advanceHeight = ReadS16((uint)(_vmtx + 4 * glyphIndex));
+                topSideBearing = ReadS16((uint)(_vmtx + 4 * glyphIndex + 2));
+            }
+            else
+            {
+                advanceHeight = ReadS16(_vmtx + 4 * (numOfLongVerMetrics - 1));
+                topSideBearing = ReadS16((uint)(_vmtx + 4 * numOfLongVerMetrics + 2 * (glyphIndex - numOfLongVerMetrics)));
             }
         }
 
@@ -567,21 +668,21 @@ namespace Baker76.Imaging
                     switch (posFormat)
                     {
                         case 1:
-                            int l = 0, r = ReadU16((uint)(table + 8 + 2 * coverageIndex)) - 1, m;
                             ushort valueFormat1 = ReadU16((uint)(table + 4));
                             ushort valueFormat2 = ReadU16((uint)(table + 6));
                             if (valueFormat1 == 4 && valueFormat2 == 0)
                             {
                                 int valueRecordPairSizeInBytes = 2;
                                 ushort pairSetCount = ReadU16((uint)(table + 8));
+                                if (coverageIndex >= pairSetCount)
+                                    return 0;
+
                                 ushort pairPosOffset = ReadU16((uint)(table + 10 + 2 * coverageIndex));
                                 uint pairValueTable = table + pairPosOffset;
                                 ushort pairValueCount = ReadU16((uint)pairValueTable);
                                 uint pairValueArray = pairValueTable + 2;
 
-                                if (coverageIndex >= pairSetCount)
-                                    return 0;
-
+                                int l = 0, r = pairValueCount - 1, m;
                                 int needle = glyph2;
 
                                 // Binary search.
@@ -589,15 +690,14 @@ namespace Baker76.Imaging
                                 {
                                     m = (l + r) >> 1;
                                     uint pairValue = (uint)(pairValueArray + (2 + valueRecordPairSizeInBytes) * m);
-                                    ushort secondGlyph = ReadU16((uint)pairValue);
-                                    int straw = secondGlyph;
-                                    if (needle < straw)
+                                    ushort secondGlyph = ReadU16(pairValue);
+                                    if (needle < secondGlyph)
                                         r = m - 1;
-                                    else if (needle > straw)
+                                    else if (needle > secondGlyph)
                                         l = m + 1;
                                     else
                                     {
-                                        short xAdvance = ReadS16((uint)(pairValue + 2));
+                                        short xAdvance = ReadS16(pairValue + 2);
                                         return xAdvance;
                                     }
                                 }
@@ -670,6 +770,9 @@ namespace Baker76.Imaging
         {
             int xAdvance = 0;
 
+            if (glyph1 == 0 || glyph2 == 0)
+                return 0;
+
             if (this._gpos != 0)
                 xAdvance += GetGlyphGPOSInfoAdvance(glyph1, glyph2);
             else if (this._kern != 0)
@@ -689,6 +792,23 @@ namespace Baker76.Imaging
         public void GetCodepointHMetrics(char codepoint, out int advanceWidth, out int leftSideBearing)
         {
             GetGlyphHMetrics(FindGlyphIndex(codepoint), out advanceWidth, out leftSideBearing);
+        }
+
+        public void GetCodepointVMetrics(char codepoint, out int advanceHeight, out int topSideBearing)
+        {
+            GetGlyphVMetrics(FindGlyphIndex(codepoint), out advanceHeight, out topSideBearing);
+        }
+
+        // advanceWidthMax is the Maximum advance width from the 'hhea' table
+        // minLeftSideBearing is the Minimum left side bearing
+        // minRightSideBearing is the Minimum right side bearing
+        // xMaxExtent is the Maximum x extent (right-most coordinate)
+        public void GetFontHMetrics(out int advanceWidthMax, out int minLeftSideBearing, out int minRightSideBearing, out int xMaxExtent)
+        {
+            advanceWidthMax = ReadS16(_hhea + 10);
+            minLeftSideBearing = ReadS16(_hhea + 12);
+            minRightSideBearing = ReadS16(_hhea + 14);
+            xMaxExtent = ReadS16(_hhea + 16);
         }
 
         // ascent is the coordinate above the baseline the font extends; 
@@ -716,57 +836,35 @@ namespace Baker76.Imaging
             return pixelHeight / fHeight;
         }
 
-        public async Task<(GlyphBitmap, int, int)> GetCodePointBitmap(float scaleX, float scaleY, char codePoint, Color color, Color backgroundColor)
+        private async Task<GlyphBitmap> GetCodePointBitmap(float scaleX, float scaleY, float shiftX, float shiftY, char codePoint, Color color, Color backgroundColor)
         {
-            return await GetGlyphBitmap(scaleX, scaleY, 0, 0, FindGlyphIndex(codePoint), color, backgroundColor);
-        }
+            int glyph = FindGlyphIndex(codePoint);
 
-        private async Task<(GlyphBitmap, int, int)> GetGlyphBitmap(float scaleX, float scaleY, float shiftX, float shiftY, int glyph, Color color, Color backgroundColor)
-        {
             // Check if the glyph is an SVG
+            //if (_svgDocuments.ContainsKey(glyph))
             if (_svg != 0)
             {
                 string svgDoc = null;
 
                 if (SvgRender != null && _svgDocuments.TryGetValue(glyph, out svgDoc))
                 {
-                    var ret = await SvgRender(this, svgDoc, glyph, _userData);
+                    var ret = await SvgRender(this, svgDoc, codePoint, glyph, _userData);
 
-                    return (ret, 0, 0);
+                    return ret;
                 }
 
-                return (new GlyphBitmap(4, 4, backgroundColor), 0, 0);
+                return new GlyphBitmap(0, 0, true, backgroundColor);
             }
 
-            // Regular glyph processing
+            var glyphMetrics = await GetGlyphMetrics(codePoint, scaleX, scaleY, shiftX, shiftY);
+
             var vertices = GetGlyphShape(glyph);
 
-            if (scaleX == 0)
-                scaleX = scaleY;
-
-            if (scaleY == 0)
-            {
-                if (scaleX == 0)
-                    throw new Exception("invalid scale");
-
-                scaleY = scaleX;
-            }
-
-            int ix0 = 0, iy0 = 0, ix1 = 0, iy1 = 0;
-
-            GetGlyphBitmapBox(glyph, scaleX, scaleY, shiftX, shiftY, out ix0, out iy0, out ix1, out iy1);
-
-            int w = (ix1 - ix0);
-            int h = (iy1 - iy0);
-
-            if (w <= 0 || h <= 0)
-                throw new Exception("invalid glyph size");
-
             // now we get the size
-            var result = new GlyphBitmap(w, h, backgroundColor);
-            Rasterize(result, 0.35f, vertices, scaleX, scaleY, shiftX, shiftY, ix0, iy0, true, color);
+            var glyphBitmap = new GlyphBitmap((int)glyphMetrics.Bounds.Width, (int)glyphMetrics.Bounds.Height, false, backgroundColor);
+            Rasterize(glyphBitmap, 0.35f, vertices, scaleX, scaleY, shiftX, shiftY, (int)glyphMetrics.Bounds.X, (int)glyphMetrics.Bounds.Y, true, color);
 
-            return (result, ix0, iy0);
+            return glyphBitmap;
         }
 
         private ushort FindGlyphIndex(char unicodeCodePoint)
@@ -1237,7 +1335,7 @@ namespace Baker76.Imaging
         }
 
         // antialiasing software rasterizer
-        public void GetGlyphBitmapBox(int glyph, float scaleX, float scaleY, float shiftX, float shiftY, out int ix0, out int iy0, out int ix1, out int iy1)
+        public void GetGlyphBoundingBox(int glyph, float scaleX, float scaleY, float shiftX, float shiftY, out int ix0, out int iy0, out int ix1, out int iy1)
         {
             ix0 = 0;
             iy0 = 0;
@@ -1258,7 +1356,7 @@ namespace Baker76.Imaging
 
         public void GetGlyphBitmapBox(char codepoint, float scaleX, float scaleY, float shiftX, float shiftY, out int ix0, out int iy0, out int ix1, out int iy1)
         {
-            GetGlyphBitmapBox(FindGlyphIndex(codepoint), scaleX, scaleY, shiftX, shiftY, out ix0, out iy0, out ix1, out iy1);
+            GetGlyphBoundingBox(FindGlyphIndex(codepoint), scaleX, scaleY, shiftX, shiftY, out ix0, out iy0, out ix1, out iy1);
         }
 
         // tesselate until threshhold p is happy... TODO warped to compensate for non-linear stretching
@@ -1679,7 +1777,7 @@ namespace Baker76.Imaging
             }
         }
 
-        private void Rasterize(GlyphBitmap bitmap, float flatnessInPixels, List<Vertex> vertices, float scaleX, float scaleY, float shiftX, float shiftY, int xOff, int yOff, bool invert, Color color)
+        private void Rasterize(GlyphBitmap glyphBitmap, float flatnessInPixels, List<Vertex> vertices, float scaleX, float scaleY, float shiftX, float shiftY, int xOff, int yOff, bool invert, Color color)
         {
             float scale = scaleX < scaleY ? scaleX : scaleY;
 
@@ -1687,17 +1785,17 @@ namespace Baker76.Imaging
             List<PointF> windings;
             int windingCount = FlattenCurves(vertices, flatnessInPixels / scale, out windingLengths, out windings);
             if (windingCount > 0)
-                Rasterize(bitmap, windings, windingLengths, windingCount, scaleX, scaleY, shiftX, shiftY, xOff, yOff, invert, color);
+                Rasterize(glyphBitmap, windings, windingLengths, windingCount, scaleX, scaleY, shiftX, shiftY, xOff, yOff, invert, color);
         }
 
-        private void Rasterize(GlyphBitmap bitmap, List<PointF> points, int[] windings, int windingCount, float scaleX, float scaleY, float shiftX, float shiftY, int xOff, int yOff, bool invert, Color color)
+        private void Rasterize(GlyphBitmap glyphBitmap, List<PointF> points, int[] windings, int windingCount, float scaleX, float scaleY, float shiftX, float shiftY, int xOff, int yOff, bool invert, Color color)
         {
             int ptOfs = 0;
 
             float yScaleInv = invert ? -scaleY : scaleY;
 
             // this value should divide 255 evenly; otherwise we won't reach full opacity
-            int vSubSamples = (bitmap.Height < 8) ? 15 : 5;
+            int vSubSamples = (glyphBitmap.Height < 8) ? 15 : 5;
             var edgeList = new List<Edge>(16);
             int m = 0;
 
@@ -1749,7 +1847,7 @@ namespace Baker76.Imaging
             edgeList.Add(temp);
 
             // now, traverse the scanlines and find the intersections on each scanline, use xor winding rule
-            RasterizeSortedEdges(bitmap, edgeList, vSubSamples, xOff, yOff, color);
+            RasterizeSortedEdges(glyphBitmap, edgeList, vSubSamples, xOff, yOff, color);
         }
 
         public int GetKerning(char current, char next, float scale)
@@ -1757,46 +1855,92 @@ namespace Baker76.Imaging
             return (int)Math.Floor(GetCodepointKernAdvance(current, next) * scale);
         }
 
-        public bool HasGlyph(char id)
+        public bool HasGlyph(char codePoint)
         {
-            var p = FindGlyphIndex(id);
+            var p = FindGlyphIndex(codePoint);
             return (p > 0);
         }
 
-        public async Task<FontGlyph> RenderGlyph(char id, float scale, Color color, Color backgroundColor)
+        public async Task<GlyphMetrics> GetGlyphMetrics(char codePoint, float scaleX, float scaleY, float shiftX, float shiftY)
         {
-            if (!HasGlyph(id))
-                return null;
+            GlyphMetrics glyphMetrics = new GlyphMetrics();
 
-            var glyphTarget = new FontGlyph();
+            if (!HasGlyph(codePoint))
+                return glyphMetrics;
 
-            int xOfs, yOfs;
+            var glyph = FindGlyphIndex(codePoint);
 
-            if (id == ' ')
+            if (scaleX == 0)
+                scaleX = scaleY;
+
+            if (scaleY == 0)
             {
-                id = '_';
-                (_, xOfs, yOfs) = await GetCodePointBitmap(scale, scale, id, color, backgroundColor);
-                glyphTarget.Image = new GlyphBitmap(4, 4, backgroundColor);
+                if (scaleX == 0)
+                    throw new Exception("invalid scale");
+
+                scaleY = scaleX;
+            }
+
+            int advanceWidth, leftSideBearing;
+            GetCodepointHMetrics(codePoint, out advanceWidth, out leftSideBearing);
+            glyphMetrics.AdvanceWidth = (int)Math.Ceiling(advanceWidth * scaleX);
+            glyphMetrics.LeftSideBearing = (int)Math.Ceiling(leftSideBearing * scaleX);
+
+            int advanceHeight, topSideBearing;
+            GetCodepointVMetrics(codePoint, out advanceHeight, out topSideBearing);
+            glyphMetrics.AdvanceHeight = (int)Math.Ceiling(advanceHeight * scaleY);
+            glyphMetrics.TopSideBearing = (int)Math.Ceiling(topSideBearing * scaleY);
+
+            int ascent, descent, lineGap;
+            GetFontVMetrics(out ascent, out descent, out lineGap);
+            int baseLine = (int)advanceHeight - (int)(ascent * scaleY);
+
+            int ix0 = 0, iy0 = 0, ix1 = 0, iy1 = 0;
+
+            GetGlyphBoundingBox(FindGlyphIndex(codePoint == ' ' ? '_' : codePoint), scaleX, scaleY, shiftX, shiftY, out ix0, out iy0, out ix1, out iy1);
+
+            int x = ix0;
+            int y = iy0;
+            int w = Math.Max(Math.Abs(ix1 - ix0), 0);
+            int h = Math.Max(Math.Abs(iy1 - iy0), 0);
+
+            glyphMetrics.Bounds = (IsSVG() ? new RectangleF(0, 0, advanceWidth, (ascent - descent)) : new RectangleF(x, y, w, h));
+
+            return glyphMetrics;
+        }
+        
+        public async Task<GlyphBitmap> RenderGlyph(char codePoint, float scale, Color color, Color backgroundColor)
+        {
+            if (!HasGlyph(codePoint))
+                return new GlyphBitmap(0, 0, false, backgroundColor);
+
+            GlyphBitmap glyphBitmap = null;
+
+            if (codePoint == ' ')
+            {
+                codePoint = '_';
+                _ = await GetCodePointBitmap(scale, scale, 0, 0, codePoint, color, backgroundColor);
+                glyphBitmap = new GlyphBitmap(4, 4, false, backgroundColor);
             }
             else
             {
-                if (!HasGlyph(id))
-                {
-                    if (char.IsLetter(id))
-                        id = (char.IsUpper(id) ? char.ToLowerInvariant(id) : char.ToUpperInvariant(id));
-                }
+                if (char.IsLetter(codePoint))
+                    codePoint = (char.IsUpper(codePoint) ? char.ToUpperInvariant(codePoint) : char.ToLowerInvariant(codePoint));
 
-                (glyphTarget.Image, xOfs, yOfs) = await GetCodePointBitmap(scale, scale, id, color, backgroundColor);
+                glyphBitmap = await GetCodePointBitmap(scale, scale, 0, 0, codePoint, color, backgroundColor);
             }
 
-            glyphTarget.xOfs = xOfs;
-            glyphTarget.yOfs = yOfs;
+            return glyphBitmap;
+        }
 
-            int xAdv, lsb;
-            GetCodepointHMetrics(id, out xAdv, out lsb);
-            glyphTarget.xAdvance = (int)Math.Floor(xAdv * scale);
+        public string Name
+        {
+            get { return _fontName; }
+        }
 
-            return glyphTarget;
+        public string Style
+        {
+            get { return _fontStyle; }
         }
 
         public uint UnitsPerEm
@@ -1809,9 +1953,15 @@ namespace Baker76.Imaging
             return _svgDocuments.Count > 0;
         }
 
+        public bool IsSVG()
+        {
+            return (_svgDocuments.Count > 0);
+        }
+
         public bool IsSVG(char codePoint)
         {
-            return _svgDocuments.ContainsKey(FindGlyphIndex(codePoint));
+            int glyph = FindGlyphIndex(codePoint);
+            return _svgDocuments.ContainsKey(glyph);
         }
     }
 }

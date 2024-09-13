@@ -17,7 +17,7 @@ namespace Baker76.Imaging
         public static GlyphBitmap CreateDistanceField(GlyphBitmap source, int scale, float spread, Color backgroundColor)
         {
             // Assuming GlyphBitmap now handles RGBA pixels, where each pixel has 4 bytes
-            var result = new GlyphBitmap(source.Width / scale, source.Height / scale, backgroundColor);
+            var result = new GlyphBitmap(source.Width / scale, source.Height / scale, false, backgroundColor);
 
             // Process each channel separately (R, G, B, A)
             float[] valuesR = new float[source.Width * source.Height];
