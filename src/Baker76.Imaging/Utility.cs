@@ -104,7 +104,7 @@ namespace Baker76.Imaging
             return new Rectangle(minWidth, minHeight, maxWidth - minWidth, maxHeight - minHeight);
         }
 
-        public static void FillSpacing(Image pngDst, Image pngSrc, Point imagePoint, Size imageSize, int spacing)
+        public static void FillSpacing(Image destImage, Image sourceImage, Point imagePoint, Size imageSize, int spacing)
         {
             if (spacing < 2)
                 return;
@@ -113,20 +113,20 @@ namespace Baker76.Imaging
 
             for (int i = 0; i < halfSpacing; i++)
             {
-                pngDst.DrawImage(pngSrc, new Rectangle(imagePoint.X + i, imagePoint.Y + halfSpacing, 1, imageSize.Height), new Rectangle(0, 0, 1, pngSrc.Height));
-                pngDst.DrawImage(pngSrc, new Rectangle(imagePoint.X + halfSpacing + imageSize.Width + i, imagePoint.Y + halfSpacing, 1, imageSize.Height), new Rectangle(pngSrc.Width - 1, 0, 1, pngSrc.Height));
-                pngDst.DrawImage(pngSrc, new Rectangle(imagePoint.X + halfSpacing, imagePoint.Y + i, imageSize.Width, 1), new Rectangle(0, 0, pngSrc.Width, 1));
-                pngDst.DrawImage(pngSrc, new Rectangle(imagePoint.X + halfSpacing, imagePoint.Y + halfSpacing + imageSize.Height + i, imageSize.Width, 1), new Rectangle(0, pngSrc.Height - 1, pngSrc.Width, 1));
+                destImage.DrawImage(sourceImage, new Rectangle(imagePoint.X + i, imagePoint.Y + halfSpacing, 1, imageSize.Height), new Rectangle(0, 0, 1, sourceImage.Height));
+                destImage.DrawImage(sourceImage, new Rectangle(imagePoint.X + halfSpacing + imageSize.Width + i, imagePoint.Y + halfSpacing, 1, imageSize.Height), new Rectangle(sourceImage.Width - 1, 0, 1, sourceImage.Height));
+                destImage.DrawImage(sourceImage, new Rectangle(imagePoint.X + halfSpacing, imagePoint.Y + i, imageSize.Width, 1), new Rectangle(0, 0, sourceImage.Width, 1));
+                destImage.DrawImage(sourceImage, new Rectangle(imagePoint.X + halfSpacing, imagePoint.Y + halfSpacing + imageSize.Height + i, imageSize.Width, 1), new Rectangle(0, sourceImage.Height - 1, sourceImage.Width, 1));
             }
 
             for (int i = 0; i < halfSpacing; i++)
             {
                 for (int j = 0; j < halfSpacing; j++)
                 {
-                    pngDst.DrawImage(pngSrc, new Rectangle(imagePoint.X + i, imagePoint.Y + j, 1, 1), new Rectangle(0, 0, 1, 1));
-                    pngDst.DrawImage(pngSrc, new Rectangle(imagePoint.X + halfSpacing + imageSize.Width + i, imagePoint.Y + j, 1, 1), new Rectangle(pngSrc.Width - 1, 0, 1, 1));
-                    pngDst.DrawImage(pngSrc, new Rectangle(imagePoint.X + i, imagePoint.Y + halfSpacing + imageSize.Height + j, 1, 1), new Rectangle(0, pngSrc.Height - 1, 1, 1));
-                    pngDst.DrawImage(pngSrc, new Rectangle(imagePoint.X + halfSpacing + imageSize.Width + i, imagePoint.Y + halfSpacing + imageSize.Height + j, 1, 1), new Rectangle(pngSrc.Width - 1, pngSrc.Height - 1, 1, 1));
+                    destImage.DrawImage(sourceImage, new Rectangle(imagePoint.X + i, imagePoint.Y + j, 1, 1), new Rectangle(0, 0, 1, 1));
+                    destImage.DrawImage(sourceImage, new Rectangle(imagePoint.X + halfSpacing + imageSize.Width + i, imagePoint.Y + j, 1, 1), new Rectangle(sourceImage.Width - 1, 0, 1, 1));
+                    destImage.DrawImage(sourceImage, new Rectangle(imagePoint.X + i, imagePoint.Y + halfSpacing + imageSize.Height + j, 1, 1), new Rectangle(0, sourceImage.Height - 1, 1, 1));
+                    destImage.DrawImage(sourceImage, new Rectangle(imagePoint.X + halfSpacing + imageSize.Width + i, imagePoint.Y + halfSpacing + imageSize.Height + j, 1, 1), new Rectangle(sourceImage.Width - 1, sourceImage.Height - 1, 1, 1));
                 }
             }
         }

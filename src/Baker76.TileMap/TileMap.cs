@@ -21,7 +21,7 @@ namespace Baker76.TileMap
         public bool QuickMode = false;
         public bool BackwardsMode = false;
         public bool CompressRLE = false;
-        public bool NoHeader = false;
+        public bool Header = false;
         public bool Split = false;
     }
 
@@ -175,7 +175,7 @@ namespace Baker76.TileMap
             return tileLayer;
         }
 
-        public static async Task<List<TileMap>> LoadTileMap(Stream stream, string fileName, Palette palette)
+        public static async Task<List<TileMap>> LoadTileMap(Stream stream, string fileName)
         {
             List<TileMap> tileMaps = new List<TileMap>();
 
@@ -258,34 +258,20 @@ namespace Baker76.TileMap
             return tileMaps;
         }
 
-        public static async Task<List<TileMap>> ParseTmx(List<IFileSource> fileList, Baker76.Imaging.Palette palette, TileMapOptions tileMapOptions)
+        public static async Task ParseTmx(Stream stream, IFileSource file, TileMapOptions tileMapOptions)
         {
-            List<TileMap> tileMaps = new List<TileMap>();
+            string fileName = file.Name;
 
-            foreach (IFileSource file in fileList)
+            using (var memoryStream = new MemoryStream())
             {
-                using (var memoryStream = new MemoryStream())
-                {
-                    string fileName = file.Name;
+                await file.OpenReadStream(1024 * 1024 * 1024).CopyToAsync(memoryStream);
 
-                    await file.OpenReadStream(1024 * 1024 * 1024).CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
 
-                    memoryStream.Position = 0;
+                (List<TileLayer> tileLayers, List<byte[]> byteList) = await ParseTmx(memoryStream, fileName, tileMapOptions);
 
-                    (List<TileLayer> tileLayers, List<byte[]> byteList) = await ParseTmx(memoryStream, fileName, tileMapOptions);
-
-                    memoryStream.Position = 0;
-                    memoryStream.SetLength(0);
-
-                    await WriteBin(memoryStream, tileLayers, byteList, 0);
-
-                    memoryStream.Position = 0;
-
-                    tileMaps.AddRange(await LoadTileMap(memoryStream, fileName, palette));
-                }
+                await WriteBin(stream, fileName, tileLayers, byteList, tileMapOptions.Header, 0);
             }
-
-            return tileMaps;
         }
 
         public static async Task<(List<TileLayer>, List<byte[]>)> ParseTmx(Stream stream, string fileName, TileMapOptions options)
@@ -466,7 +452,7 @@ namespace Baker76.TileMap
             return (tileLayers, byteList);
         }
 
-        public static async Task WriteBin(Stream stream, TileMap tileMap)
+        public static async Task WriteBin(Stream stream, TileMap tileMap, int version)
         {
             TileLayer tileLayer = ToTileLayer(tileMap, 1);
 
@@ -509,7 +495,20 @@ namespace Baker76.TileMap
                     byteData = Zx0.Compress(byteData, quickMode, backwardsMode, out int size);
                 }
 
-                await WriteBin(stream, new List<TileLayer> { tileLayer }, new List<byte[]> { byteData }, 0);
+                await WriteBin(stream, new List<TileLayer> { tileLayer }, new List<byte[]> { byteData }, version);
+            }
+        }
+
+        public static async Task WriteBin(Stream stream, string fileName, List<TileLayer> tileLayers, List<byte[]> byteList, bool includeHeader, int version)
+        {
+            if (includeHeader)
+            {
+                await WriteBin(stream, tileLayers, byteList, version);
+            }
+            else
+            {
+                foreach (byte[] byteData in byteList)
+                    stream.Write(byteData, 0, byteData.Length);
             }
         }
 
