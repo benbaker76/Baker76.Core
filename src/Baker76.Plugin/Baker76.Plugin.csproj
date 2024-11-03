@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Baker76.Compression\Baker76.Compression.csproj" />
+    <ProjectReference Include="..\Baker76.Imaging\Baker76.Imaging.csproj" />
+  </ItemGroup>
+
 </Project>
