@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -790,9 +791,19 @@ namespace Baker76.Imaging
             return PngReader.Read(fileName);
         }
 
+        public static Image Load(Stream stream)
+        {
+            return PngReader.Read(stream);
+        }
+
         public void Save(string fileName)
         {
             PngWriter.Write(fileName, this);
+        }
+
+        public void Save(Stream stream, bool shouldCloseStream)
+        {
+            PngWriter.Write(stream, this, shouldCloseStream);
         }
 
         public Size Size => new Size(Width, Height);
