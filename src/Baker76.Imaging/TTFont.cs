@@ -115,10 +115,10 @@ namespace Baker76.Imaging
     public class GlyphMetrics
     {
         public RectangleF Bounds { get; set; }
-        public int LeftSideBearing { get; internal set; }
-        public int TopSideBearing { get; internal set; }
-        public int AdvanceWidth { get; internal set; }
-        public int AdvanceHeight { get; internal set; }
+        public int LeftSideBearing { get; set; }
+        public int TopSideBearing { get; set; }
+        public int AdvanceWidth { get; set; }
+        public int AdvanceHeight { get; set; }
     }
 
     internal struct Edge

@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Abstractions.Sass.CIBuild" Version="1.1.52" />
+      <PackageReference Include="Abstractions.Sass.CIBuild" Version="1.1.65" />
     </ItemGroup>
 
 </Project>
