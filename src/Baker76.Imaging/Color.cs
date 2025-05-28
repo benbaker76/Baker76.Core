@@ -209,6 +209,20 @@ namespace Baker76.Imaging
         public static Color Yellow => new Color(255, 255, 0);
         public static Color Cyan => new Color(0, 255, 255);
         public static Color Magenta => new Color(255, 0, 255);
+        public static Color Gray => new Color(128, 128, 128);
+        public static Color LightGray => new Color(211, 211, 211);
+        public static Color DarkGray => new Color(169, 169, 169);
+        public static Color Orange => new Color(255, 165, 0);
+        public static Color Pink => new Color(255, 192, 203);
+        public static Color Purple => new Color(128, 0, 128);
+        public static Color Brown => new Color(165, 42, 42);
+        public static Color Lime => new Color(0, 255, 0);
+        public static Color Olive => new Color(128, 128, 0);
+        public static Color Navy => new Color(0, 0, 128);
+        public static Color Teal => new Color(0, 128, 128);
+        public static Color Maroon => new Color(128, 0, 0);
+        public static Color Silver => new Color(192, 192, 192);
+        public static Color Gold => new Color(255, 215, 0);
         public static Color Transparent => new Color(0, 0, 0, 0);
 
         public bool Equals(Color other)

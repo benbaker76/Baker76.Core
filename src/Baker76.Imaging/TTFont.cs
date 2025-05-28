@@ -110,6 +110,82 @@ namespace Baker76.Imaging
                 }
             }
         }
+
+        public void DrawFontGuides(int x, int y, FontMetrics metrics, float scale)
+        {
+            Color topColor = Color.Purple;
+            Color ascentColor = Color.Lime;
+            Color baseLineColor = Color.Red;
+            Color descentColor = Color.Blue;
+            Color bottomColor = Color.Orange;
+
+            int width = (int)Math.Round(metrics.AdvanceWidthMax * scale);
+
+            int ascent = (int)Math.Round(metrics.Ascent * scale);
+            int descent = (int)Math.Round(metrics.Descent * scale);
+            int lineGap = (int)Math.Round(metrics.LineGap * scale);
+
+            int baselineY = y;
+            int ascentY = baselineY - ascent;
+            int descentY = baselineY - descent; // descent is usually negative
+            int topY = ascentY; // in simple fonts top == ascent (unless font bbox says otherwise)
+            int bottomY = descentY + lineGap; // bottom after descent + gap
+
+            DrawHorizontalLine(x, topY, width, topColor);         // Top
+            DrawHorizontalLine(x, ascentY, width, ascentColor);    // Ascent
+            DrawHorizontalLine(x, baselineY, width, baseLineColor); // Baseline
+            DrawHorizontalLine(x, descentY, width, descentColor);  // Descent
+            DrawHorizontalLine(x, bottomY, width, bottomColor);    // Bottom
+        }
+
+        private void DrawHorizontalLine(int x, int y, int width, Color color)
+        {
+            if (y < 0 || y >= Height)
+                return;
+
+            for (int x1 = 0; x1 < width; x1++)
+            {
+                int xOffset = x + x1;
+                int yOffset = y;
+                int ofs = (xOffset + yOffset * Width) * 4;
+
+                if (xOffset < 0 || xOffset >= Width)
+                    continue;
+
+                if (yOffset < 0 || yOffset >= Height)
+                    continue;
+
+                Pixels[ofs + 0] = (byte)color.R;
+                Pixels[ofs + 1] = (byte)color.G;
+                Pixels[ofs + 2] = (byte)color.B;
+                Pixels[ofs + 3] = 255;
+            }
+        }
+    }
+
+    public class FontMetrics
+    {
+        public int CapHeight;
+        public int Ascent;
+        public int Descent;
+        public int Height;
+        public int LineHeight;
+        public int LineGap;
+        public int BaseLine;
+        public int AdvanceWidthMax;
+        public int MinLeftSideBearing;
+        public int MinRightSideBearing;
+        public int xMaxExtent;
+
+        public FontMetrics(TTFont font)
+        {
+            font.GetFontVMetrics(out Ascent, out Descent, out LineGap);
+            CapHeight = font.GetCapHeight();
+            Height = Ascent - Descent;
+            LineHeight = Height + LineGap;
+            BaseLine = Ascent;
+            font.GetFontHMetrics(out AdvanceWidthMax, out MinLeftSideBearing, out MinRightSideBearing, out xMaxExtent);
+        }
     }
 
     public class GlyphMetrics
@@ -187,6 +263,7 @@ namespace Baker76.Imaging
         private uint _kern; // table locations as offset from start of .ttf
         private uint _name;
         private uint _gpos;
+        private uint _os2;
         private uint _svg;
 
         private uint _indexMap;                // a cmap mapping for our chosen character encoding
@@ -245,6 +322,7 @@ namespace Baker76.Imaging
             _kern = FindTable("kern");
             _name = FindTable("name");
             _gpos = FindTable("GPOS");
+            _os2 = FindTable("OS/2");
             _svg = FindTable("SVG ");
 
             /* if (cmap == 0 || _loca == 0 || _head == 0 || _glyf == 0 || _hhea == 0 || _hmtx == 0)
@@ -823,17 +901,25 @@ namespace Baker76.Imaging
             lineGap = ReadS16(_hhea + 8);
         }
 
-        public float ScaleInEm(float ems)
+        public int GetCapHeight()
         {
-            return ScaleInPixels(ems * 16f);
-        }
+            if (_os2 == 0)
+            {
+                // No OS/2 table: fallback to ascent
+                GetFontVMetrics(out int ascent, out _, out _);
+                return ascent;
+            }
 
-        public float ScaleInPixels(float pixelHeight)
-        {
-            var ascent = ReadS16(_hhea + 4);
-            var descent = ReadS16(_hhea + 6);
-            float fHeight = ascent - descent;
-            return pixelHeight / fHeight;
+            ushort version = ReadU16(_os2 + 0);
+            if (version < 2)
+            {
+                // sCapHeight only exists in OS/2 version 2 or later
+                GetFontVMetrics(out int ascent, out _, out _);
+                return ascent;
+            }
+
+            // Read sCapHeight from OS/2 table (offset 86)
+            return ReadS16(_os2 + 86);
         }
 
         private async Task<GlyphBitmap> GetCodePointBitmap(float scaleX, float scaleY, float shiftX, float shiftY, char codePoint, Color color, Color backgroundColor)
@@ -1893,7 +1979,6 @@ namespace Baker76.Imaging
 
             int ascent, descent, lineGap;
             GetFontVMetrics(out ascent, out descent, out lineGap);
-            int baseLine = (int)advanceHeight - (int)(ascent * scaleY);
 
             int ix0 = 0, iy0 = 0, ix1 = 0, iy1 = 0;
 
@@ -1908,7 +1993,7 @@ namespace Baker76.Imaging
 
             return glyphMetrics;
         }
-        
+
         public async Task<GlyphBitmap> RenderGlyph(char codePoint, float scale, Color color, Color backgroundColor)
         {
             if (!HasGlyph(codePoint))
