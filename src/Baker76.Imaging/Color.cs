@@ -25,12 +25,12 @@ namespace Baker76.Imaging
 
         public static Color FromArgb(int argb)
         {
-            return new Color((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF, (argb >> 24) & 0xFF);
+            return new Color(argb >> 16 & 0xFF, argb >> 8 & 0xFF, argb & 0xFF, argb >> 24 & 0xFF);
         }
 
         public static Color FromArgb(int argb, int alpha)
         {
-            return new Color((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF, alpha);
+            return new Color(argb >> 16 & 0xFF, argb >> 8 & 0xFF, argb & 0xFF, alpha);
         }
 
         public static Color FromArgb(int a, int r, int g, int b)
@@ -45,12 +45,12 @@ namespace Baker76.Imaging
 
         public static Color FromRgba(int rgba)
         {
-            return new Color((rgba >> 24) & 0xFF, (rgba >> 16) & 0xFF, (rgba >> 8) & 0xFF, rgba & 0xFF);
+            return new Color(rgba >> 24 & 0xFF, rgba >> 16 & 0xFF, rgba >> 8 & 0xFF, rgba & 0xFF);
         }
 
         public static Color FromRgba(int rgba, int alpha)
         {
-            return new Color((rgba >> 24) & 0xFF, (rgba >> 16) & 0xFF, (rgba >> 8) & 0xFF, alpha);
+            return new Color(rgba >> 24 & 0xFF, rgba >> 16 & 0xFF, rgba >> 8 & 0xFF, alpha);
         }
 
         public static Color FromRgba(int r, int g, int b, int a)
@@ -66,26 +66,26 @@ namespace Baker76.Imaging
         public static Color FromRgbaNonPremultiplied(int r, int g, int b, int a)
         {
             return new Color(
-                (r * a / 255),
-                (g * a / 255),
-                (b * a / 255),
+                r * a / 255,
+                g * a / 255,
+                b * a / 255,
                 a
             );
         }
 
         public int ToArgb()
         {
-            return (A << 24) | (R << 16) | (G << 8) | B;
+            return A << 24 | R << 16 | G << 8 | B;
         }
 
         public int ToRgba()
         {
-            return (R << 24) | (G << 16) | (B << 8) | A;
+            return R << 24 | G << 16 | B << 8 | A;
         }
 
         public bool IsEmpty()
         {
-            return (R == 0 && G == 0 && B == 0);
+            return R == 0 && G == 0 && B == 0;
         }
 
         /// <summary>
@@ -94,9 +94,9 @@ namespace Baker76.Imaging
         /// </summary>
         public float GetBrightness()
         {
-            float r = (float)R / 255.0f;
-            float g = (float)G / 255.0f;
-            float b = (float)B / 255.0f;
+            float r = R / 255.0f;
+            float g = G / 255.0f;
+            float b = B / 255.0f;
 
             float max, min;
 
@@ -116,14 +116,14 @@ namespace Baker76.Imaging
         ///       value, in degrees, for this <see cref='System.Drawing.Color'/> .  
         ///       If R == G == B, the hue is meaningless, and the return value is 0.
         /// </summary>
-        public Single GetHue()
+        public float GetHue()
         {
             if (R == G && G == B)
                 return 0; // 0 makes as good an UNDEFINED value as any
 
-            float r = (float)R / 255.0f;
-            float g = (float)G / 255.0f;
-            float b = (float)B / 255.0f;
+            float r = R / 255.0f;
+            float g = G / 255.0f;
+            float b = B / 255.0f;
 
             float max, min;
             float delta;
@@ -166,9 +166,9 @@ namespace Baker76.Imaging
         /// </summary>
         public float GetSaturation()
         {
-            float r = (float)R / 255.0f;
-            float g = (float)G / 255.0f;
-            float b = (float)B / 255.0f;
+            float r = R / 255.0f;
+            float g = G / 255.0f;
+            float b = B / 255.0f;
 
             float max, min;
             float l, s = 0;

@@ -5,10 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Baker76.Plugin;
+using Baker76.Core.IO;
 using Baker76.Imaging;
-using Image=Baker76.Imaging.Image;
-using Color=Baker76.Imaging.Color;
+using Image = Baker76.Imaging.Image;
+using Color = Baker76.Imaging.Color;
+using Baker76.Imaging.Pngcs;
+using Baker76.Imaging;
 
 namespace Baker76.Atlas
 {

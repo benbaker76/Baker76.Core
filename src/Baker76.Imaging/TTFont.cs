@@ -79,7 +79,7 @@ namespace Baker76.Imaging
                         continue;
 
                     int srcOfs = (i + j * other.Width) * 4;
-                    int destOfs = (destX + destY * this.Width) * 4;
+                    int destOfs = (destX + destY * Width) * 4;
 
                     // Extract source and destination colors
                     byte srcRed = other.Pixels[srcOfs];
@@ -234,8 +234,8 @@ namespace Baker76.Imaging
             this.y = y;
             this.cx = cx;
             this.cy = cy;
-            this.cx1 = 0;
-            this.cy1 = 0;
+            cx1 = 0;
+            cy1 = 0;
         }
     }
 
@@ -288,8 +288,8 @@ namespace Baker76.Imaging
         private const byte MS_EID_UNICODE_FULL = 10;
 
         private const int FIXSHIFT = 10;
-        private const int FIX = (1 << FIXSHIFT);
-        private const int FIXMASK = (FIX - 1);
+        private const int FIX = 1 << FIXSHIFT;
+        private const int FIXMASK = FIX - 1;
 
         private const byte VMOVE = 1;
         private const byte VLINE = 2;
@@ -308,7 +308,7 @@ namespace Baker76.Imaging
 
             if (!IsFont())
             {
-                throw new System.Exception("Invalid font file");
+                throw new Exception("Invalid font file");
             }
 
             var cmap = FindTable("cmap");
@@ -341,8 +341,8 @@ namespace Baker76.Imaging
                 _glyphCount = -1;
 
             // find a cmap encoding table we understand *now* to avoid searching later. (todo: could make this installable)
-            var numTables = (int)(ReadU16(cmap + 2));
-            this._indexMap = 0;
+            var numTables = (int)ReadU16(cmap + 2);
+            _indexMap = 0;
 
             for (int i = 0; i < numTables; i++)
             {
@@ -357,7 +357,7 @@ namespace Baker76.Imaging
                             case MS_EID_UNICODE_BMP:
                             case MS_EID_UNICODE_FULL:
                                 // MS/Unicode
-                                _indexMap = (uint)(cmap + ReadU32(encodingRecord + 4));
+                                _indexMap = cmap + ReadU32(encodingRecord + 4);
                                 break;
                         }
                         break;
@@ -366,7 +366,7 @@ namespace Baker76.Imaging
 
             if (_indexMap == 0)
             {
-                throw new System.Exception("Could not find font index map");
+                throw new Exception("Could not find font index map");
             }
 
             _unitsPerEm = ReadU16(_head + 18);
@@ -397,7 +397,7 @@ namespace Baker76.Imaging
         {
             // if it's just a font, there's only one valid index
             if (IsFont())
-                return (index == 0 ? 0 : -1);
+                return index == 0 ? 0 : -1;
 
             // check if it's a TTC
             if (TagEqual(_data, "ttcf"))
@@ -416,17 +416,17 @@ namespace Baker76.Imaging
 
         private byte Read8(uint offset)
         {
-            return (offset >= _data.Length ? (byte)0 : _data[offset]);
+            return offset >= _data.Length ? (byte)0 : _data[offset];
         }
 
         private ushort ReadU16(uint offset)
         {
-            return (offset >= _data.Length ? (ushort)0 : (ushort)((_data[offset] << 8) + _data[offset + 1]));
+            return offset >= _data.Length ? (ushort)0 : (ushort)((_data[offset] << 8) + _data[offset + 1]);
         }
 
         private short ReadS16(uint offset)
         {
-            return (offset >= _data.Length ? (short)0 : (short)((_data[offset] << 8) + _data[offset + 1]));
+            return offset >= _data.Length ? (short)0 : (short)((_data[offset] << 8) + _data[offset + 1]);
         }
 
         private uint ReadU32(uint offset)
@@ -442,7 +442,7 @@ namespace Baker76.Imaging
             if (offset >= _data.Length)
                 return 0;
             else
-                return (int)((_data[offset] << 24) + (_data[offset + 1] << 16) + (_data[offset + 2] << 8) + _data[offset + 3]);
+                return (_data[offset] << 24) + (_data[offset + 1] << 16) + (_data[offset + 2] << 8) + _data[offset + 3];
         }
 
         private bool HasTag(uint offset, string tag)
@@ -619,7 +619,7 @@ namespace Baker76.Imaging
                     {
                         uint glyphArray = coverageTable + 4;
                         ushort glyphID;
-                        m = (l + r) >> 1;
+                        m = l + r >> 1;
                         glyphID = ReadU16((uint)(glyphArray + 2 * m));
                         straw = glyphID;
                         if (needle < straw)
@@ -641,7 +641,7 @@ namespace Baker76.Imaging
                     needle = glyph;
                     while (l <= r)
                     {
-                        m = (l + r) >> 1;
+                        m = l + r >> 1;
                         uint rangeRecord = (uint)(rangeArray + 6 * m);
                         strawStart = ReadU16(rangeRecord);
                         strawEnd = ReadU16(rangeRecord + 2);
@@ -687,7 +687,7 @@ namespace Baker76.Imaging
                     int strawStart, strawEnd, needle = glyph;
                     while (l <= r)
                     {
-                        m = (l + r) >> 1;
+                        m = l + r >> 1;
                         uint classRangeRecord = (uint)(classRangeRecords + 6 * m);
                         strawStart = ReadU16(classRangeRecord);
                         strawEnd = ReadU16(classRangeRecord + 2);
@@ -710,25 +710,25 @@ namespace Baker76.Imaging
 
         private int GetGlyphGPOSInfoAdvance(int glyph1, int glyph2)
         {
-            if (this._gpos == 0)
+            if (_gpos == 0)
                 return 0;
 
-            if (ReadU16((uint)(this._gpos + 0)) != 1)
+            if (ReadU16(_gpos + 0) != 1)
                 return 0; // Major version 1
-            if (ReadU16((uint)(this._gpos + 2)) != 0)
+            if (ReadU16(_gpos + 2) != 0)
                 return 0; // Minor version 0
 
-            ushort lookupListOffset = ReadU16((uint)(this._gpos + 8));
-            uint lookupList = this._gpos + lookupListOffset;
-            ushort lookupCount = ReadU16((uint)lookupList);
+            ushort lookupListOffset = ReadU16(_gpos + 8);
+            uint lookupList = _gpos + lookupListOffset;
+            ushort lookupCount = ReadU16(lookupList);
 
             for (int i = 0; i < lookupCount; ++i)
             {
                 ushort lookupOffset = ReadU16((uint)(lookupList + 2 + 2 * i));
                 uint lookupTable = lookupList + lookupOffset;
 
-                ushort lookupType = ReadU16((uint)lookupTable);
-                ushort subTableCount = ReadU16((uint)(lookupTable + 4));
+                ushort lookupType = ReadU16(lookupTable);
+                ushort subTableCount = ReadU16(lookupTable + 4);
                 uint subTableOffsets = lookupTable + 6;
                 if (lookupType != 2) // Pair Adjustment Positioning Subtable
                     continue;
@@ -737,27 +737,27 @@ namespace Baker76.Imaging
                 {
                     ushort subtableOffset = ReadU16((uint)(subTableOffsets + 2 * sti));
                     uint table = lookupTable + subtableOffset;
-                    ushort posFormat = ReadU16((uint)table);
-                    ushort coverageOffset = ReadU16((uint)(table + 2));
-                    int coverageIndex = GetCoverageIndex((uint)(table + coverageOffset), glyph1);
+                    ushort posFormat = ReadU16(table);
+                    ushort coverageOffset = ReadU16(table + 2);
+                    int coverageIndex = GetCoverageIndex(table + coverageOffset, glyph1);
                     if (coverageIndex == -1)
                         continue;
 
                     switch (posFormat)
                     {
                         case 1:
-                            ushort valueFormat1 = ReadU16((uint)(table + 4));
-                            ushort valueFormat2 = ReadU16((uint)(table + 6));
+                            ushort valueFormat1 = ReadU16(table + 4);
+                            ushort valueFormat2 = ReadU16(table + 6);
                             if (valueFormat1 == 4 && valueFormat2 == 0)
                             {
                                 int valueRecordPairSizeInBytes = 2;
-                                ushort pairSetCount = ReadU16((uint)(table + 8));
+                                ushort pairSetCount = ReadU16(table + 8);
                                 if (coverageIndex >= pairSetCount)
                                     return 0;
 
                                 ushort pairPosOffset = ReadU16((uint)(table + 10 + 2 * coverageIndex));
                                 uint pairValueTable = table + pairPosOffset;
-                                ushort pairValueCount = ReadU16((uint)pairValueTable);
+                                ushort pairValueCount = ReadU16(pairValueTable);
                                 uint pairValueArray = pairValueTable + 2;
 
                                 int l = 0, r = pairValueCount - 1, m;
@@ -766,7 +766,7 @@ namespace Baker76.Imaging
                                 // Binary search.
                                 while (l <= r)
                                 {
-                                    m = (l + r) >> 1;
+                                    m = l + r >> 1;
                                     uint pairValue = (uint)(pairValueArray + (2 + valueRecordPairSizeInBytes) * m);
                                     ushort secondGlyph = ReadU16(pairValue);
                                     if (needle < secondGlyph)
@@ -785,19 +785,19 @@ namespace Baker76.Imaging
                             break;
 
                         case 2:
-                            valueFormat1 = ReadU16((uint)(table + 4));
-                            valueFormat2 = ReadU16((uint)(table + 6));
+                            valueFormat1 = ReadU16(table + 4);
+                            valueFormat2 = ReadU16(table + 6);
                             if (valueFormat1 == 4 && valueFormat2 == 0)
                             {
-                                ushort classDef1Offset = ReadU16((uint)(table + 8));
-                                ushort classDef2Offset = ReadU16((uint)(table + 10));
-                                int glyph1class = GetGlyphClass((uint)(table + classDef1Offset), glyph1);
-                                int glyph2class = GetGlyphClass((uint)(table + classDef2Offset), glyph2);
+                                ushort classDef1Offset = ReadU16(table + 8);
+                                ushort classDef2Offset = ReadU16(table + 10);
+                                int glyph1class = GetGlyphClass(table + classDef1Offset, glyph1);
+                                int glyph2class = GetGlyphClass(table + classDef2Offset, glyph2);
 
-                                ushort class1Count = ReadU16((uint)(table + 12));
-                                ushort class2Count = ReadU16((uint)(table + 14));
+                                ushort class1Count = ReadU16(table + 12);
+                                ushort class2Count = ReadU16(table + 14);
                                 uint class1Records = table + 16;
-                                uint class2Records = (uint)(class1Records + 2 * (glyph1class * class2Count));
+                                uint class2Records = (uint)(class1Records + 2 * glyph1class * class2Count);
                                 short xAdvance = ReadS16((uint)(class2Records + 2 * glyph2class));
                                 return xAdvance;
                             }
@@ -816,29 +816,29 @@ namespace Baker76.Imaging
 
         private int GetGlyphKernInfoAdvance(int glyph1, int glyph2)
         {
-            if (this._kern == 0)
+            if (_kern == 0)
                 return 0;
 
             // we only look at the first table. it must be 'horizontal' and format 0.
-            if (ReadU16(this._kern + 2) < 1) // number of tables
+            if (ReadU16(_kern + 2) < 1) // number of tables
                 return 0;
 
-            if (ReadU16(this._kern + 8) != 1) // horizontal flag, format
+            if (ReadU16(_kern + 8) != 1) // horizontal flag, format
                 return 0;
 
             int l = 0;
-            int r = ReadU16(this._kern + 10) - 1;
-            uint needle = (uint)((glyph1 << 16) | glyph2);
+            int r = ReadU16(_kern + 10) - 1;
+            uint needle = (uint)(glyph1 << 16 | glyph2);
             while (l <= r)
             {
-                var m = (l + r) >> 1;
-                var straw = ReadU32((uint)(this._kern + 18 + (m * 6))); // note: unaligned read
+                var m = l + r >> 1;
+                var straw = ReadU32((uint)(_kern + 18 + m * 6)); // note: unaligned read
                 if (needle < straw)
                     r = m - 1;
                 else if (needle > straw)
                     l = m + 1;
                 else
-                    return ReadS16((uint)(this._kern + 22 + (m * 6)));
+                    return ReadS16((uint)(_kern + 22 + m * 6));
             }
 
             return 0;
@@ -851,9 +851,9 @@ namespace Baker76.Imaging
             if (glyph1 == 0 || glyph2 == 0)
                 return 0;
 
-            if (this._gpos != 0)
+            if (_gpos != 0)
                 xAdvance += GetGlyphGPOSInfoAdvance(glyph1, glyph2);
-            else if (this._kern != 0)
+            else if (_kern != 0)
                 xAdvance += GetGlyphKernInfoAdvance(glyph1, glyph2);
 
             return xAdvance;
@@ -861,7 +861,7 @@ namespace Baker76.Imaging
 
         private int GetCodepointKernAdvance(char ch1, char ch2)
         {
-            if (this._kern == 0 && this._gpos == 0) // if no kerning table, don't waste time looking up both codepoint->glyphs
+            if (_kern == 0 && _gpos == 0) // if no kerning table, don't waste time looking up both codepoint->glyphs
                 return 0;
 
             return GetGlyphKernAdvance(FindGlyphIndex(ch1), FindGlyphIndex(ch2));
@@ -1018,7 +1018,7 @@ namespace Baker76.Imaging
 
                         search += 2;
 
-                        var item = (ushort)((search - endCount) >> 1);
+                        var item = (ushort)(search - endCount >> 1);
 
                         //STBTT_assert(unicode_codepoint <= ttUSHORT(data + endCount + 2*item));
                         var startValue = ReadU16((uint)(_indexMap + 14 + segcount * 2 + 2 + 2 * item));
@@ -1043,7 +1043,7 @@ namespace Baker76.Imaging
                         // Binary search the right group.
                         while (low <= high)
                         {
-                            var mid = low + ((high - low) >> 1); // rounds down, so low <= mid < high
+                            var mid = low + (high - low >> 1); // rounds down, so low <= mid < high
                             var startChar = ReadU32((uint)(_indexMap + 16 + mid * 12));
                             var endChar = ReadU32((uint)(_indexMap + 16 + mid * 12 + 4));
                             if (unicodeCodePoint < startChar)
@@ -1090,7 +1090,7 @@ namespace Baker76.Imaging
                 g2 = (int)(_glyf + ReadU32((uint)(_loca + glyphIndex * 4 + 4)));
             }
 
-            return (g1 == g2 ? -1 : g1); // if length is 0, return -1
+            return g1 == g2 ? -1 : g1; // if length is 0, return -1
         }
 
         private bool GetGlyphBox(int glyphIndex, out int x0, out int y0, out int x1, out int y1)
@@ -1123,7 +1123,7 @@ namespace Baker76.Imaging
             if (startOff)
             {
                 if (wasOff)
-                    vertices.Add(new Vertex(VCURVE, (short)((cx + scx) >> 1), (short)((cy + scy) >> 1), cx, cy));
+                    vertices.Add(new Vertex(VCURVE, (short)(cx + scx >> 1), (short)(cy + scy >> 1), cx, cy));
                 vertices.Add(new Vertex(VCURVE, sx, sy, scx, scy));
             }
             else
@@ -1247,7 +1247,7 @@ namespace Baker76.Imaging
                             CloseShape(result, wasOff, startOff, sx, sy, scx, scy, cx, cy);
 
                         // now start the new one
-                        startOff = ((flags & 1) == 0);
+                        startOff = (flags & 1) == 0;
                         if (startOff)
                         {
                             // if we start off with an off-curve point, then when we need to find a point on the curve
@@ -1257,14 +1257,14 @@ namespace Baker76.Imaging
                             if ((vertices[off + i + 1].vertexType & 1) == 0)
                             {
                                 // next point is also a curve point, so interpolate an on-point curve
-                                sx = (short)((x + vertices[off + i + 1].x) >> 1);
-                                sy = (short)((y + vertices[off + i + 1].y) >> 1);
+                                sx = (short)(x + vertices[off + i + 1].x >> 1);
+                                sy = (short)(y + vertices[off + i + 1].y >> 1);
                             }
                             else
                             {
                                 // otherwise just use the next point as our start point
-                                sx = (short)vertices[off + i + 1].x;
-                                sy = (short)vertices[off + i + 1].y;
+                                sx = vertices[off + i + 1].x;
+                                sy = vertices[off + i + 1].y;
                                 i++; // we're using point i+1 as the starting point, so skip it
                             }
                         }
@@ -1285,7 +1285,7 @@ namespace Baker76.Imaging
                         if ((flags & 1) == 0) // if it's a curve
                         {
                             if (wasOff) // two off-curve control points in a row means interpolate an on-curve midpoint
-                                result.Add(new Vertex(VCURVE, (short)((cx + x) >> 1), (short)((cy + y) >> 1), cx, cy));
+                                result.Add(new Vertex(VCURVE, (short)(cx + x >> 1), (short)(cy + y >> 1), cx, cy));
                             cx = x;
                             cy = y;
                             wasOff = true;
@@ -1349,7 +1349,7 @@ namespace Baker76.Imaging
                         throw new NotImplementedException("matching point");
                     }
 
-                    if ((flags & (1 << 3)) != 0) // WE_HAVE_A_SCALE
+                    if ((flags & 1 << 3) != 0) // WE_HAVE_A_SCALE
                     {
                         mtx[0] = ReadS16(comp2) / 16384f;
                         mtx[1] = 0;
@@ -1357,7 +1357,7 @@ namespace Baker76.Imaging
                         mtx[3] = ReadS16(comp2) / 16384f;
                         comp2 += 2;
                     }
-                    else if ((flags & (1 << 6)) != 0)// WE_HAVE_AN_X_AND_YSCALE
+                    else if ((flags & 1 << 6) != 0)// WE_HAVE_AN_X_AND_YSCALE
                     {
                         mtx[0] = ReadS16(comp2) / 16384f;
                         comp2 += 2;
@@ -1366,7 +1366,7 @@ namespace Baker76.Imaging
                         mtx[3] = ReadS16(comp2) / 16384f;
                         comp2 += 2;
                     }
-                    else if ((flags & (1 << 7)) != 0) // WE_HAVE_A_TWO_BY_TWO
+                    else if ((flags & 1 << 7) != 0) // WE_HAVE_A_TWO_BY_TWO
                     {
                         mtx[0] = ReadS16(comp2) / 16384f;
                         comp2 += 2;
@@ -1409,7 +1409,7 @@ namespace Baker76.Imaging
                     }
 
                     // More components ?
-                    more = (flags & (1 << 5)) != 0;
+                    more = (flags & 1 << 5) != 0;
                 }
             }
             else
@@ -1638,7 +1638,7 @@ namespace Baker76.Imaging
             z.x -= offX * FIX;
             z.ey = edge.y1;
             z.next = null;
-            z.direction = (edge.invert ? 1 : -1);
+            z.direction = edge.invert ? 1 : -1;
             return z;
         }
 
@@ -1675,18 +1675,18 @@ namespace Baker76.Imaging
                             if (i == j)
                             {
                                 // x0,x1 are the same pixel, so compute combined coverage
-                                int coverage = (int)(((x1 - x0) * maxWeight) >> FIXSHIFT);
+                                int coverage = (x1 - x0) * maxWeight >> FIXSHIFT;
                                 AddCoverage(scanline, i, coverage, color);
                             }
                             else
                             {
                                 if (i >= 0) // add antialiasing for x0
-                                    AddCoverage(scanline, i, (int)(((FIX - (x0 & FIXMASK)) * maxWeight) >> FIXSHIFT), color);
+                                    AddCoverage(scanline, i, (FIX - (x0 & FIXMASK)) * maxWeight >> FIXSHIFT, color);
                                 else
                                     i = -1; // clip
 
                                 if (j < len) // add antialiasing for x1
-                                    AddCoverage(scanline, j, (int)(((x1 & FIXMASK) * maxWeight) >> FIXSHIFT), color);
+                                    AddCoverage(scanline, j, (x1 & FIXMASK) * maxWeight >> FIXSHIFT, color);
                                 else
                                     j = len; // clip
 
@@ -1881,7 +1881,7 @@ namespace Baker76.Imaging
             float yScaleInv = invert ? -scaleY : scaleY;
 
             // this value should divide 255 evenly; otherwise we won't reach full opacity
-            int vSubSamples = (glyphBitmap.Height < 8) ? 15 : 5;
+            int vSubSamples = glyphBitmap.Height < 8 ? 15 : 5;
             var edgeList = new List<Edge>(16);
             int m = 0;
 
@@ -1944,7 +1944,7 @@ namespace Baker76.Imaging
         public bool HasGlyph(char codePoint)
         {
             var p = FindGlyphIndex(codePoint);
-            return (p > 0);
+            return p > 0;
         }
 
         public async Task<GlyphMetrics> GetGlyphMetrics(char codePoint, float scaleX, float scaleY, float shiftX, float shiftY)
@@ -1989,7 +1989,7 @@ namespace Baker76.Imaging
             int w = Math.Max(Math.Abs(ix1 - ix0), 0);
             int h = Math.Max(Math.Abs(iy1 - iy0), 0);
 
-            glyphMetrics.Bounds = (IsSVG() ? new RectangleF(0, 0, advanceWidth, (ascent - descent)) : new RectangleF(x, y, w, h));
+            glyphMetrics.Bounds = IsSVG() ? new RectangleF(0, 0, advanceWidth, ascent - descent) : new RectangleF(x, y, w, h);
 
             return glyphMetrics;
         }
@@ -2010,7 +2010,7 @@ namespace Baker76.Imaging
             else
             {
                 if (char.IsLetter(codePoint))
-                    codePoint = (char.IsUpper(codePoint) ? char.ToUpperInvariant(codePoint) : char.ToLowerInvariant(codePoint));
+                    codePoint = char.IsUpper(codePoint) ? char.ToUpperInvariant(codePoint) : char.ToLowerInvariant(codePoint);
 
                 glyphBitmap = await GetCodePointBitmap(scale, scale, 0, 0, codePoint, color, backgroundColor);
             }
@@ -2040,7 +2040,7 @@ namespace Baker76.Imaging
 
         public bool IsSVG()
         {
-            return (_svgDocuments.Count > 0);
+            return _svgDocuments.Count > 0;
         }
 
         public bool IsSVG(char codePoint)

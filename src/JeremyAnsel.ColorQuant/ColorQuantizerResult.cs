@@ -5,14 +5,14 @@
 // Licensed under the MIT license. See LICENSE.txt
 // </license>
 
+using Baker76.Imaging;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+
 namespace JeremyAnsel.ColorQuant
 {
-    using Baker76.Imaging;
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Linq;
-
     /// <summary>
     /// A result of color quantization.
     /// </summary>

@@ -5,13 +5,13 @@
 // Licensed under the MIT license. See LICENSE.txt
 // </license>
 
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
+
 namespace JeremyAnsel.ColorQuant
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Threading.Tasks;
-
     /// <summary>
     /// A Wu's color quantizer.
     /// </summary>

@@ -31,9 +31,7 @@ namespace Baker76.Core.IO
         private void LoadFromFile(string fileName)
         {
             using (var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.Read))
-            {
                 LoadFromStream(stream);
-            }
         }
 
         private void LoadFromStream(Stream stream)
@@ -75,6 +73,11 @@ namespace Baker76.Core.IO
                     }
                 }
             }
+        }
+
+        public void Save()
+        {
+            SaveToFile(_fileName);
         }
 
         public void SaveToFile(string fileName)

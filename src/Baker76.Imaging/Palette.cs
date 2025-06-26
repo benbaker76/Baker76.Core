@@ -34,7 +34,7 @@ namespace Baker76.Imaging
             }
             
             this.maxColors = maxColors;
-            this.Colors = new List<Color>();
+            Colors = new List<Color>();
         }
         
         /// <summary>
@@ -49,7 +49,7 @@ namespace Baker76.Imaging
             }
 
             Colors = colors.ToList();
-            this.maxColors = this.Colors.Count;
+            maxColors = Colors.Count;
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace Baker76.Imaging
                 throw new ArgumentOutOfRangeException($"Palette can only have maximum {maxColors} colors");
             }
 
-            this.Colors.Add(color);
+            Colors.Add(color);
         }
 
         /// <summary>
@@ -99,10 +99,10 @@ namespace Baker76.Imaging
         {
             for (int i = 0; i < colors.Count() && i < maxColors; i++)
             {
-                if (i < this.Colors.Count)
-                    this.Colors[i] = colors[i];
+                if (i < Colors.Count)
+                    Colors[i] = colors[i];
                 else
-                    this.Colors.Add(colors[i]);
+                    Colors.Add(colors[i]);
             }
         }
 

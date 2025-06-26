@@ -5,7 +5,6 @@ using System.IO;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net.Http;
-using Baker76.Imaging;
 using System.Threading.Tasks;
 
 namespace Baker76.Imaging
@@ -170,7 +169,7 @@ namespace Baker76.Imaging
 
             string tempString = ReadLine(binaryReader);
             string versionString = ReadLine(binaryReader);
-            int palCount = Int32.Parse(ReadLine(binaryReader));
+            int palCount = int.Parse(ReadLine(binaryReader));
             colorPalette = new Color[palCount];
 
             for (int i = 0; i < colorPalette.Length; i++)
@@ -181,7 +180,7 @@ namespace Baker76.Imaging
                     break;
 
                 string[] colorArray = colorString.Split(new char[] { ' ' }, StringSplitOptions.None);
-                colorPalette[i] = new Color(Byte.Parse(colorArray[0]), Byte.Parse(colorArray[1]), Byte.Parse(colorArray[2]));
+                colorPalette[i] = new Color(byte.Parse(colorArray[0]), byte.Parse(colorArray[1]), byte.Parse(colorArray[2]));
             }
 
             return colorPalette;
@@ -211,9 +210,9 @@ namespace Baker76.Imaging
 
                 byte red = 0, green = 0, blue = 0;
 
-                if (!Byte.TryParse(colorArray[0], out red) ||
-                    !Byte.TryParse(colorArray[1], out green) ||
-                    !Byte.TryParse(colorArray[2], out blue))
+                if (!byte.TryParse(colorArray[0], out red) ||
+                    !byte.TryParse(colorArray[1], out green) ||
+                    !byte.TryParse(colorArray[2], out blue))
                     continue;
 
                 colorList.Add(new Color(red, green, blue));
@@ -239,7 +238,7 @@ namespace Baker76.Imaging
 
                 int result = 0;
 
-                if (Int32.TryParse(lineString, NumberStyles.HexNumber, null, out result))
+                if (int.TryParse(lineString, NumberStyles.HexNumber, null, out result))
                 {
                     colorList.Add(Color.FromArgb(result));
                 }

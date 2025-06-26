@@ -1,15 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-	</PropertyGroup>
+  <PropertyGroup>
+    <Description>Tools for generating and parsing Tiled tile map format.</Description>
+    <PackageTags>Baker76;TileMap;Tiled</PackageTags>
+  </PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Baker76.Compression\Baker76.Compression.csproj" />
-		<ProjectReference Include="..\Baker76.Imaging\Baker76.Imaging.csproj" />
-		<ProjectReference Include="..\Baker76.Plugin\Baker76.Plugin.csproj" />
+		<None Include="README.md" Pack="true" PackagePath="\" />
+		<None Include="LICENSE" Pack="true" PackagePath="\" />
 	</ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Baker76.Compression\Baker76.Compression.csproj" />
+    <ProjectReference Include="..\Baker76.Core\Baker76.Core.csproj" />
+    <ProjectReference Include="..\Baker76.Imaging\Baker76.Imaging.csproj" />
+  </ItemGroup>
 
 </Project>

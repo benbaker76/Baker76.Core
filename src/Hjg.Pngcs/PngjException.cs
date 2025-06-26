@@ -1,29 +1,33 @@
-namespace Hjg.Pngcs {
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
+using System.Runtime.CompilerServices;
 
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.ComponentModel;
-    using System.IO;
-    using System.Runtime.CompilerServices;
-
+namespace Hjg.Pngcs
+{
     /// <summary>
     /// Gral exception class for PNGCS library
     /// </summary>
     [Serializable]
-    public class PngjException : Exception {
+    public class PngjException : Exception
+    {
         private const long serialVersionUID = 1L;
 
         public PngjException(String message, Exception cause)
-            : base(message, cause) {
+            : base(message, cause)
+        {
         }
 
         public PngjException(String message)
-            : base(message) {
+            : base(message)
+        {
         }
 
         public PngjException(Exception cause)
-            : base(cause.Message, cause) {
+            : base(cause.Message, cause)
+        {
         }
     }
 }

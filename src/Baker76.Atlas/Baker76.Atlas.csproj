@@ -1,14 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+		<Description>Tools for generating and parsing Crunch texture atlas format.</Description>
+		<PackageTags>Baker76;Atlas;Crunch</PackageTags>
   </PropertyGroup>
 
-  <ItemGroup>
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+		<None Include="LICENSE" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
+	<ItemGroup>
+    <ProjectReference Include="..\Baker76.Core\Baker76.Core.csproj" />
     <ProjectReference Include="..\Baker76.Imaging\Baker76.Imaging.csproj" />
-    <ProjectReference Include="..\Baker76.Plugin\Baker76.Plugin.csproj" />
     <ProjectReference Include="..\JeremyAnsel.ColorQuant\JeremyAnsel.ColorQuant.csproj" />
   </ItemGroup>
 

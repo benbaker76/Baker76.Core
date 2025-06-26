@@ -1,11 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <Description>Baker76 Compression is a library for reading and extracting compression file formats.</Description>
-        <PackageTags>Baker76;Compression</PackageTags>
-    </PropertyGroup>
-    
-    <ItemGroup>
-      <ProjectReference Include="..\Baker76.Core\Baker76.Core.csproj" />
-    </ItemGroup>
+
+  <PropertyGroup>
+    <Description>A library for reading and extracting compression file formats.</Description>
+    <PackageTags>Baker76;Compression</PackageTags>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+		<None Include="LICENSE" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
+	<ItemGroup>
+    <ProjectReference Include="..\Baker76.Core\Baker76.Core.csproj" />
+  </ItemGroup>
 
 </Project>

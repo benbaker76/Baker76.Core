@@ -1,9 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <Description>JeremyAnsel ColorQuant is a color quantizer based on Xiaolin Wu's Color Quantizer.</Description>
-        <PackageTags>JeremyAnsel;ColorQuant</PackageTags>
-    </PropertyGroup>
-    <ItemGroup>
-      <ProjectReference Include="..\Baker76.Imaging\Baker76.Imaging.csproj" />
-    </ItemGroup>
+
+  <PropertyGroup>
+    <Description>A color quantizer based on Xiaolin Wu's Color Quantizer.</Description>
+    <PackageTags>ColorQuant</PackageTags>
+    <Authors>Jérémy Ansel</Authors>
+   </PropertyGroup>
+
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+		<None Include="LICENSE" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
+	<ItemGroup>
+    <ProjectReference Include="..\Baker76.Imaging\Baker76.Imaging.csproj" />
+  </ItemGroup>
+
 </Project>

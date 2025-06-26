@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Hjg.Pngcs.Zlib {
+namespace Hjg.Pngcs.Zlib
+{
     // DEFLATE compression strategy
-    public enum EDeflateCompressStrategy {
+    public enum EDeflateCompressStrategy
+    {
         Filtered,
         Huffman,
         Default

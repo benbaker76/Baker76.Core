@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.IO.Compression;
-// ONLY FOR .NET 4.5
-namespace Hjg.Pngcs.Zlib {
 
-#if NET45
-
+namespace Hjg.Pngcs.Zlib
+{
     /// <summary>
     /// Zip input (deflater) based on Ms DeflateStream (.net 4.5)
     /// </summary>
@@ -105,7 +103,4 @@ namespace Hjg.Pngcs.Zlib {
             return "Zlib inflater: .Net CLR 4.5";
         }
     }
-#endif
-
-    
 }

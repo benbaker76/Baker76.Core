@@ -5,11 +5,11 @@
 // Licensed under the MIT license. See LICENSE.txt
 // </license>
 
+using Baker76.Imaging;
+using System.Threading.Tasks;
+
 namespace JeremyAnsel.ColorQuant
 {
-    using Baker76.Imaging;
-    using System.Threading.Tasks;
-
     public class ColorQuantizerOptions
     {
         public Color[] Palette;

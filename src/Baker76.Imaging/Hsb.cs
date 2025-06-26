@@ -18,7 +18,7 @@ namespace Baker76.Imaging
             }
             set
             {
-                h = (float)(Math.Abs(value) % 360);
+                h = Math.Abs(value) % 360;
             }
         }
 
@@ -64,13 +64,13 @@ namespace Baker76.Imaging
                 int iSextant, iMax, iMid, iMin;
                 if (0.5 < b)
                 {
-                    fMax = b - (b * s) + s;
-                    fMin = b + (b * s) - s;
+                    fMax = b - b * s + s;
+                    fMin = b + b * s - s;
                 }
                 else
                 {
-                    fMax = b + (b * s);
-                    fMin = b - (b * s);
+                    fMax = b + b * s;
+                    fMin = b - b * s;
                 }
                 iSextant = (int)Math.Floor(h / 60.0f);
                 if (300.0f <= h)
@@ -78,7 +78,7 @@ namespace Baker76.Imaging
                     h -= 360.0f;
                 }
                 h /= 60.0f;
-                h -= 2.0f * (float)Math.Floor(((iSextant + 1.0f) % 6.0f) / 2.0f);
+                h -= 2.0f * (float)Math.Floor((iSextant + 1.0f) % 6.0f / 2.0f);
                 if (0 == iSextant % 2)
                 {
                     fMid = h * (fMax - fMin) + fMin;
@@ -87,9 +87,9 @@ namespace Baker76.Imaging
                 {
                     fMid = fMin - h * (fMax - fMin);
                 }
-                iMax = System.Convert.ToInt32(fMax * 255);
-                iMid = System.Convert.ToInt32(fMid * 255);
-                iMin = System.Convert.ToInt32(fMin * 255);
+                iMax = Convert.ToInt32(fMax * 255);
+                iMid = Convert.ToInt32(fMid * 255);
+                iMin = Convert.ToInt32(fMin * 255);
                 switch (iSextant)
                 {
                     case 1:

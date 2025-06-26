@@ -4,12 +4,15 @@ using System.IO;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
-using static Baker76.Imaging.Aseprite.Layer;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using Baker76.Imaging;
 using Baker76.Compression;
-using Baker76.Plugin;
-using Image=Baker76.Imaging.Image;
-using Color=Baker76.Imaging.Color;
+using Baker76.Core.IO;
+using static Baker76.Imaging.Aseprite.Layer;
+using Image = Baker76.Imaging.Image;
+using Color = Baker76.Imaging.Color;
+using Baker76.Imaging.Pngcs;
 
 namespace Baker76.TileMap
 {

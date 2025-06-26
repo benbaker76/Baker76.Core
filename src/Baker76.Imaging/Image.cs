@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using static Baker76.Imaging.Aseprite;
+using Baker76.Imaging.Pngcs;
 
 namespace Baker76.Imaging
 {

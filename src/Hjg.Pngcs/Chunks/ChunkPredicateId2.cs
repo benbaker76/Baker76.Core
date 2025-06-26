@@ -13,7 +13,6 @@ namespace Hjg.Pngcs.Chunks
     /// </remarks>
     internal class ChunkPredicateId2 : ChunkPredicate
     {
-
         private readonly string id;
         private readonly string innerid;
         public ChunkPredicateId2(string id, string inner)
@@ -32,6 +31,5 @@ namespace Hjg.Pngcs.Chunks
 
             return true;
         }
-
     }
 }

@@ -6,10 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Baker76.Plugin;
+using Baker76.Core.IO;
 using Baker76.Imaging;
 using JeremyAnsel.ColorQuant;
-using Color=Baker76.Imaging.Color;
+using Color = Baker76.Imaging.Color;
 
 namespace Baker76.Atlas
 {

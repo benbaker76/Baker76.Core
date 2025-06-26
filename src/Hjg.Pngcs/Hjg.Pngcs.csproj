@@ -1,12 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <Description>A small library to read/write huge PNG files in C#</Description>
-    <PackageTags>PNG</PackageTags>
-  </PropertyGroup>
-  <PropertyGroup>
-    <DefineConstants>NET45</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup>
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
+
+	<PropertyGroup>
+		<Authors>Hernan J Gonzalez</Authors>
+		<Copyright>Copyright © 2024</Copyright>
+		<Description>A small library to read/write huge PNG files in C#</Description>
+		<PackageTags>png</PackageTags>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+		<None Include="LICENSE" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
 </Project>
