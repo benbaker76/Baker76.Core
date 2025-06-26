@@ -34,7 +34,7 @@ See more at [Baker76.Imaging](src/Baker76.Imaging) section.
 
 Tools for generating and parsing Tiled tilemap format.
 
-See more at [Baker76.Imaging](src/Baker76.TimeMap) section.
+See more at [Baker76.TileMap](src/Baker76.TimeMap) section.
 
 ## Baker76.Pngcs
 
