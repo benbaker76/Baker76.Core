@@ -11,7 +11,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-    <ProjectReference Include="..\Hjg.Pngcs\Hjg.Pngcs.csproj" />
+    <ProjectReference Include="..\Baker76.Pngcs\Baker76.Pngcs.csproj" />
   </ItemGroup>
 
 </Project>

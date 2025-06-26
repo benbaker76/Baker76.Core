@@ -36,14 +36,14 @@ Tools for generating and parsing Tiled tilemap format.
 
 See more at [Baker76.TileMap](src/Baker76.TimeMap) section.
 
-## Hjg.Pngcs
+## Baker76.Pngcs
 
 A C# implementation of the PNG (Portable Network Graphics) image format.
 
-See more at [Hjg.Pngcs](src/Hjg.Pngcs) section.
+See more at [Baker76.Pngcs](src/Baker76.Pngcs) section.
 
-## JeremyAnsel.ColorQuant
+## Baker76.ColorQuant
 
 A C# implementation of the Xiaolin Wu's Color Quantizer (v. 2).
 
-See more at [JeremyAnsel.ColorQuant](JeremyAnsel.ColorQuant) section.
+See more at [Baker76.ColorQuant](Baker76.ColorQuant) section.

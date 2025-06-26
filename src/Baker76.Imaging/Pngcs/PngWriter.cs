@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
-using Hjg.Pngcs;
-using Hjg.Pngcs.Chunks;
+using Baker76.Pngcs;
+using Baker76.Pngcs.Chunks;
 
 namespace Baker76.Imaging.Pngcs
 {
@@ -22,7 +22,7 @@ namespace Baker76.Imaging.Pngcs
             var hasPalette = image.BitsPerPixel <= 8;
 
             var imageInfo = new ImageInfo(image.Width, image.Height, BitDepth, hasAlpha, IsGrayscale, hasPalette);
-            var pngWriter = new Hjg.Pngcs.PngWriter(stream, imageInfo);
+            var pngWriter = new Baker76.Pngcs.PngWriter(stream, imageInfo);
 
             pngWriter.ShouldCloseStream = shouldCloseStream;
 
@@ -75,7 +75,7 @@ namespace Baker76.Imaging.Pngcs
             pngWriter.End();
         }
 
-        private static void CreateTransparencyChunk(Hjg.Pngcs.PngWriter pngWriter, Image image)
+        private static void CreateTransparencyChunk(Baker76.Pngcs.PngWriter pngWriter, Image image)
         {
             var transparencyChunk = new PngChunkTRNS(pngWriter.ImgInfo);
 
@@ -99,7 +99,7 @@ namespace Baker76.Imaging.Pngcs
             pngWriter.GetChunksList().Queue(transparencyChunk);
         }
 
-        private static void CreatePaletteChunk(Hjg.Pngcs.PngWriter pngWriter, Palette palette)
+        private static void CreatePaletteChunk(Baker76.Pngcs.PngWriter pngWriter, Palette palette)
         {
             var paletteChunk = pngWriter.GetMetadata().CreatePLTEChunk();
 

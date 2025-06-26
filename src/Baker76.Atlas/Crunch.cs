@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Baker76.Core.IO;
 using Baker76.Imaging;
-using JeremyAnsel.ColorQuant;
+using Baker76.ColorQuant;
 using Color = Baker76.Imaging.Color;
 
 namespace Baker76.Atlas

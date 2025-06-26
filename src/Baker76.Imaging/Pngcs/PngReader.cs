@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Hjg.Pngcs;
+using Baker76.Pngcs;
 
 namespace Baker76.Imaging.Pngcs
 {
@@ -19,7 +19,7 @@ namespace Baker76.Imaging.Pngcs
 
         public static Image Read(Stream stream)
         {
-            var pngReader = new Hjg.Pngcs.PngReader(stream);
+            var pngReader = new Baker76.Pngcs.PngReader(stream);
             return pngReader.ImgInfo.Indexed ? ReadIndexedImage(pngReader) : ReadImage(pngReader);
         }
 
@@ -27,12 +27,12 @@ namespace Baker76.Imaging.Pngcs
         {
             return await Task.Run(() =>
             {
-                var pngReader = new Hjg.Pngcs.PngReader(stream);
+                var pngReader = new Baker76.Pngcs.PngReader(stream);
                 return pngReader.ImgInfo.Indexed ? ReadIndexedImage(pngReader) : ReadImage(pngReader);
             });
         }
 
-        private static Image ReadIndexedImage(Hjg.Pngcs.PngReader pngReader)
+        private static Image ReadIndexedImage(Baker76.Pngcs.PngReader pngReader)
         {
             var palette = ReadPalette(pngReader);
 
@@ -50,7 +50,7 @@ namespace Baker76.Imaging.Pngcs
                 imageData);
         }
 
-        private static Palette ReadPalette(Hjg.Pngcs.PngReader pngReader)
+        private static Palette ReadPalette(Baker76.Pngcs.PngReader pngReader)
         {
             var paletteChunk = pngReader.GetMetadata().GetPLTE();
             var transparentChunk = pngReader.GetMetadata().GetTRNS();
@@ -86,7 +86,7 @@ namespace Baker76.Imaging.Pngcs
             return palette;
         }
 
-        private static Image ReadImage(Hjg.Pngcs.PngReader pngReader)
+        private static Image ReadImage(Baker76.Pngcs.PngReader pngReader)
         {
             var imageData = new byte[pngReader.ImgInfo.Cols * pngReader.ImgInfo.Rows * RGBA_BYTES_PER_PIXEL];
 

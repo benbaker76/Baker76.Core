@@ -13,7 +13,7 @@
 	<ItemGroup>
     <ProjectReference Include="..\Baker76.Core\Baker76.Core.csproj" />
     <ProjectReference Include="..\Baker76.Imaging\Baker76.Imaging.csproj" />
-    <ProjectReference Include="..\JeremyAnsel.ColorQuant\JeremyAnsel.ColorQuant.csproj" />
+    <ProjectReference Include="..\Baker76.ColorQuant\Baker76.ColorQuant.csproj" />
   </ItemGroup>
 
 </Project>
