@@ -4,11 +4,11 @@ on: [workflow_dispatch]
 
 jobs:
   build:
-
+    timeout-minutes: 5
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -18,10 +18,13 @@ jobs:
         echo "::set-output name=tag::`echo $(git describe --tags --abbrev=0)`"
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
-
+        dotnet-version: |
+          9.0.x
+          8.0.x
+          6.0.x
+          
     - name: Update package version
       shell: pwsh
       run: |
@@ -50,5 +53,5 @@ jobs:
       working-directory: ./src
       run: |
         dotnet nuget add source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --name github --username ${{ github.repository_owner }} --password ${{ github.token }} --store-password-in-clear-text
-        dotnet nuget push **/bin/Release/*.nupkg --source github --skip-duplicate
-        dotnet nuget push **/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_ORG_API_KEY }} --skip-duplicate
+        dotnet nuget push **/bin/Release/*.nupkg --source "github" --skip-duplicate --api-key ${{ secrets.GITHUB_TOKEN }}
+        dotnet nuget push **/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate --api-key ${{ secrets.NUGET_ORG_API_KEY }}
