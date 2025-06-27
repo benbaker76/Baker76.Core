@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Baker76.Core.IO;
 
-namespace RetroStudio.Core.Plugin
+namespace Baker76.Core.Plugin
 {
     public interface IPlugin
     {
