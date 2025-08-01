@@ -167,7 +167,7 @@ namespace Baker76.Imaging
             return retSize;
         }
 
-        public static Image[] SpriteSheetSplicer(Image srcImage, Size inputSize, Size marginSize, Size spacingSize, Size outputSize, bool autoTrim, bool useTrimSize, int paletteSlot, bool paletteSlotAddIndex, int backgroundIndex)
+        public static Image[] SpriteSheetSplicer(Image sourceImage, Size inputSize, Size marginSize, Size spacingSize, Size outputSize, bool autoTrim, bool useTrimSize, int paletteSlot, bool paletteSlotAddIndex, int backgroundIndex)
         {
             List<Image> outputImages = new List<Image>();
             Rectangle trimRect = new Rectangle(0, 0, inputSize.Width, inputSize.Height);
@@ -177,21 +177,21 @@ namespace Baker76.Imaging
             {
                 trimRect = new Rectangle(inputSize.Width, inputSize.Height, 0, 0);
 
-                cols = (srcImage.Width - marginSize.Width) / (inputSize.Width + spacingSize.Width);
-                rows = (srcImage.Height - marginSize.Height) / (inputSize.Height + spacingSize.Height);
+                cols = (sourceImage.Width - marginSize.Width) / (inputSize.Width + spacingSize.Width);
+                rows = (sourceImage.Height - marginSize.Height) / (inputSize.Height + spacingSize.Height);
 
                 for (int y = 0; y < rows; y++)
                 {
                     for (int x = 0; x < cols; x++)
                     {
-                        Rectangle srcRect = new Rectangle(marginSize.Width + x * (inputSize.Width + spacingSize.Width), marginSize.Height + y * (inputSize.Height + spacingSize.Height), inputSize.Width, inputSize.Height);
-                        Image dstImage = new Image(inputSize.Width, inputSize.Height, srcImage.BitsPerPixel, srcImage.Palette);
+                        Rectangle sourceRect = new Rectangle(marginSize.Width + x * (inputSize.Width + spacingSize.Width), marginSize.Height + y * (inputSize.Height + spacingSize.Height), inputSize.Width, inputSize.Height);
+                        Image destImage = new Image(inputSize.Width, inputSize.Height, sourceImage.BitsPerPixel, sourceImage.Palette);
 
-                        dstImage.Clear(Color.Empty);
-                        dstImage.DrawImage(srcImage, new Rectangle(0, 0, inputSize.Width, inputSize.Height), srcRect);
+                        destImage.Clear(Color.Empty);
+                        destImage.DrawImage(sourceImage, new Rectangle(0, 0, inputSize.Width, inputSize.Height), sourceRect);
 
                         int backIndex = (paletteSlotAddIndex ? backgroundIndex + paletteSlot * 16 : backgroundIndex);
-                        Rectangle rect = Utility.GetTrimmedBackgroundRect(dstImage, backIndex);
+                        Rectangle rect = Utility.GetTrimmedBackgroundRect(destImage, backIndex);
 
                         trimRect.X = System.Math.Min(trimRect.X, rect.X);
                         trimRect.Y = System.Math.Min(trimRect.Y, rect.Y);
@@ -204,24 +204,61 @@ namespace Baker76.Imaging
                 }
             }
 
-            cols = (srcImage.Width - marginSize.Width) / (inputSize.Width + spacingSize.Width);
-            rows = (srcImage.Height - marginSize.Height) / (inputSize.Height + spacingSize.Height);
+            cols = (sourceImage.Width - marginSize.Width) / (inputSize.Width + spacingSize.Width);
+            rows = (sourceImage.Height - marginSize.Height) / (inputSize.Height + spacingSize.Height);
 
             for (int y = 0; y < rows; y++)
             {
                 for (int x = 0; x < cols; x++)
                 {
-                    Rectangle srcRect = new Rectangle(marginSize.Width + x * (inputSize.Width + spacingSize.Width), marginSize.Height + y * (inputSize.Height + spacingSize.Height), inputSize.Width, inputSize.Height);
-                    Image dstImage = new Image(outputSize.Width, outputSize.Height, srcImage.BitsPerPixel, srcImage.Palette);
+                    Rectangle sourceRect = new Rectangle(marginSize.Width + x * (inputSize.Width + spacingSize.Width), marginSize.Height + y * (inputSize.Height + spacingSize.Height), inputSize.Width, inputSize.Height);
+                    Image destImage = new Image(outputSize.Width, outputSize.Height, sourceImage.BitsPerPixel, sourceImage.Palette);
 
-                    dstImage.Clear(Color.Empty);
-                    dstImage.DrawImage(srcImage, new Rectangle(0, 0, outputSize.Width, outputSize.Height), srcRect);
+                    destImage.Clear(Color.Empty);
+                    destImage.DrawImage(sourceImage, new Rectangle(0, 0, outputSize.Width, outputSize.Height), sourceRect);
 
-                    outputImages.Add(dstImage);
+                    outputImages.Add(destImage);
                 }
             }
 
             return outputImages.ToArray();
+        }
+
+
+        public static void SpriteSheetStripper(Image sourceImage, string destPath, Size spriteSize, Rectangle paddingRect)
+        {
+            int stepX = spriteSize.Width + paddingRect.Left + paddingRect.Right;
+            int stepY = spriteSize.Height + paddingRect.Top + paddingRect.Bottom;
+
+            int cols = (sourceImage.Width - paddingRect.Left) / stepX;
+            int rows = (sourceImage.Height - paddingRect.Top) / stepY;
+            int spriteCount = cols * rows;
+
+            int outWidth = spriteSize.Width;
+            int outHeight = spriteSize.Height * spriteCount;
+
+            var destImage = new Image(outWidth, outHeight, sourceImage.BitsPerPixel, sourceImage.Palette);
+            int destY = 0;
+
+            for (int row = 0; row < rows; row++)
+            {
+                for (int col = 0; col < cols; col++)
+                {
+                    int sourceX = paddingRect.Left + col * stepX;
+                    int sourceY = paddingRect.Top + row * stepY;
+
+                    if (sourceX + spriteSize.Width > sourceImage.Width || sourceY + spriteSize.Height > sourceImage.Height)
+                        continue;
+
+                    Rectangle sourceRect = new Rectangle(sourceX, sourceY, spriteSize.Width, spriteSize.Height);
+                    Rectangle destRect = new Rectangle(0, destY, spriteSize.Width, spriteSize.Height);
+
+                    destImage.DrawImage(sourceImage, destRect, sourceRect);
+                    destY += spriteSize.Height;
+                }
+            }
+
+            destImage.Save(destPath);
         }
 
         public static int NearestPowerOfTwo(double n)
